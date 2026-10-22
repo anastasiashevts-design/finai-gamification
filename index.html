@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinAI · Геймификация</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Один светлый вид, как в продукте FinAI. Токены совпадают с прототипом отчётов. */
+:root{
+  --bg:#f2f5f8; --surface:#ffffff; --ink:#13181b; --ink2:#485056; --ink3:#8a959d;
+  --line:#d5dfe6; --line2:#e8eef2; --chip:#edf0f2; --hover:#f7f9fb;
+  --accent:#199af0; --accent-ink:#0b7ecb; --accent-soft:#e2f1fb;
+  --ok:#1a9e32; --ok-soft:#e3f4e7; --warn:#b7791f; --warn-soft:#fff4dc; --danger:#c4202f; --danger-soft:#fde8ea;
+  --g1:#58FF6E; --g2:#05C5C8; --g3:#00E2FF; --g4:#1999EE; --g5:#99AFFE;
+  --glow:0 0 0 1px rgba(5,197,200,.35),0 8px 28px rgba(25,153,238,.22);
+  --f:'Golos Text',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --fast:150ms; --base:250ms; --slow:400ms;
+  --e-std:cubic-bezier(.2,0,0,1); --e-spring:cubic-bezier(.34,1.56,.64,1); --e-exit:cubic-bezier(.4,0,1,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:14px;line-height:1.4}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,h4{margin:0;text-wrap:balance}
+p{margin:0}
+
+.app{display:flex;min-height:100%}
+/* global sidebar — как в продукте: узкая иконочная рейка на фоне страницы */
+.side{flex:0 0 60px;width:60px;display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:10px;position:sticky;top:0;height:100vh}
+.logo{width:36px;height:36px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center}
+.gsep{width:20px;height:1px;background:var(--line)}
+.nav{width:36px;height:36px;border-radius:50%;border:0;background:var(--surface);display:flex;align-items:center;justify-content:center;position:relative;color:var(--ink);padding:0;transition:box-shadow var(--fast),color var(--fast)}
+.nav:hover{background:var(--hover)}
+.nav[aria-current="page"]{box-shadow:0 0 0 1px rgba(25,154,240,.3) inset;color:var(--accent-ink)}
+.nav.deco{cursor:default}
+.nav .cnt{position:absolute;top:-6px;right:-10px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 4px;border:1.5px solid var(--bg);line-height:12px}
+.nav .cnt.okc{background:var(--ok)}
+[data-tip]:hover:after{content:attr(data-tip);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--ink);color:#fff;font-size:11px;font-weight:500;padding:5px 8px;border-radius:6px;white-space:nowrap;z-index:100;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.me{width:40px;height:40px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;position:relative;background:conic-gradient(var(--g2) 0 var(--p,0%),var(--line) var(--p,0%) 100%);transition:box-shadow var(--base)}
+.me:hover{box-shadow:var(--glow)}
+.me .ava{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
+.me .lv{position:absolute;bottom:-4px;right:-6px;background:var(--surface);color:var(--accent-ink);font-size:9px;font-weight:700;border-radius:8px;padding:1px 4px;box-shadow:0 1px 3px rgba(19,24,27,.18)}
+
+/* main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.head{padding:16px 24px 8px 8px;display:flex;flex-direction:column;gap:4px}
+.crumbs{font-size:12px;color:var(--ink3);display:flex;gap:6px}
+.crumbs span+span:before{content:"/";margin-right:6px}
+.titlerow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.titlerow h1{font-size:18px;font-weight:700}
+.info{width:20px;height:20px;border:0;background:transparent;padding:2px;color:var(--ink3);display:grid;place-items:center;border-radius:6px}
+.info:hover{background:var(--chip);color:var(--ink2)}
+.badges{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.badge{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;border:0;position:relative}
+.b-def{background:var(--chip);color:var(--ink2)}
+.b-acc{background:var(--accent-soft);color:var(--accent-ink)}
+.b-pos{background:var(--ok-soft);color:var(--ok)}
+.b-warn{background:var(--warn-soft);color:var(--warn)}
+.b-neg{background:var(--danger-soft);color:var(--danger)}
+.badge.sm{height:22px;font-size:12px;padding:0 8px;border-radius:6px}
+button.badge:hover{filter:brightness(.97)}
+.bump{animation:bump 520ms var(--e-spring)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+.float{position:absolute;right:4px;top:-4px;font-weight:700;color:var(--ok);pointer-events:none;animation:floatup 1100ms var(--e-std) forwards;font-size:13px}
+@keyframes floatup{from{opacity:0;transform:translateY(6px)}20%{opacity:1}to{opacity:0;transform:translateY(-26px)}}
+.content{padding:12px 24px 120px 8px;flex:1}
+
+/* segments */
+.seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;height:30px;padding:0 14px;border-radius:8px;font-weight:500;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(19,24,27,.12)}
+.toolbar{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+
+/* tasks */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
+.list{display:flex;flex-direction:column;gap:8px}
+.card{background:var(--surface);border-radius:14px;border:1px solid var(--line2)}
+.task{padding:14px 16px;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:left;width:100%;border:1px solid var(--line2);background:var(--surface);border-radius:14px;transition:box-shadow var(--fast),border-color var(--fast),opacity var(--slow) var(--e-exit),transform var(--slow) var(--e-exit),max-height var(--slow) var(--e-exit),padding var(--slow),margin var(--slow);max-height:200px;overflow:hidden}
+.task:hover{border-color:var(--line)}
+.task[aria-current="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.task.gone{opacity:0;transform:translateX(24px);max-height:0;padding-block:0;margin-top:-8px;border-width:0}
+.task .meta{display:flex;gap:8px;color:var(--ink3);font-size:12px;flex-wrap:wrap;align-items:center}
+.task b{font-weight:600}
+.detail{padding:24px;display:flex;flex-direction:column;gap:18px;position:sticky;top:16px}
+.detail h2{font-size:20px;font-weight:700}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:13px}
+.kv dt{color:var(--ink3)}.kv dd{margin:0;font-weight:500}
+.route{display:flex;gap:0;align-items:center;font-size:12px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:var(--chip);color:var(--ink2)}
+.step.done{background:var(--ok-soft);color:var(--ok)}
+.step.cur{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.arrow{width:16px;height:1px;background:var(--line);margin:0 4px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--line2);padding-top:16px}
+.btn{height:40px;padding:0 18px;border-radius:10px;border:1px solid transparent;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background var(--base) var(--e-std),color var(--base),transform var(--fast),min-width var(--base);white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-ink)}
+.btn.sec{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.btn.sec:hover{background:var(--hover)}
+.btn.ghost{background:transparent;color:var(--accent-ink)}
+.btn.ok{background:var(--ok);color:#fff}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn.sm{height:32px;padding:0 12px;border-radius:8px;font-size:13px}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.chk path{stroke-dasharray:24;stroke-dashoffset:24;animation:draw 380ms 60ms var(--e-std) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+textarea,input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);transition:border-color var(--fast)}
+textarea:focus,input:focus,select:focus{border-color:var(--accent);outline:none}
+
+/* empty states */
+.empty{padding:32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.empty img{width:min(320px,100%);animation:bob 3.2s ease-in-out infinite}
+.empty h2{font-size:20px}
+.empty p{color:var(--ink2);max-width:420px}
+.stars{display:flex;gap:4px;justify-content:center}
+.stars button{border:0;background:transparent;font-size:26px;color:var(--line);padding:0 2px;transition:color var(--fast),transform var(--fast)}
+.stars button.on,.stars button:hover{color:#ffb020}
+.stars button:hover{transform:scale(1.15)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* toasts */
+.toasts{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:10px;z-index:60;width:min(300px,calc(100vw - 32px))}
+/* «Vertical Notification» из библиотеки: иллюстрация сверху, заголовок, текст, серая кнопка действия */
+.toast{width:100%;background:var(--surface);border-radius:16px;box-shadow:0 0 0 1px rgba(5,197,200,.28),0 0 22px rgba(0,226,255,.22),0 12px 30px rgba(19,24,27,.12);display:flex;flex-direction:column;gap:4px;padding:14px 16px 14px;animation:tin var(--slow) var(--e-spring);position:relative;overflow:hidden}
+.toast.out{animation:tout var(--base) var(--e-exit) forwards}
+.toast .ill{width:72px;height:72px;object-fit:contain;margin:-2px 0 4px -4px}
+.toast .ill.cat{animation:bob 2.4s ease-in-out infinite}
+.toast b{display:block;font-size:14px;font-weight:600;padding-right:22px}
+.toast span{color:var(--ink2);font-size:13px;line-height:1.4}
+.toast .act{align-self:flex-start;margin-top:8px;height:28px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);font-size:12px;font-weight:600;color:var(--ink)}
+.toast .act:hover{background:var(--line2)}
+.toast .x{position:absolute;top:10px;right:10px;border:0;background:transparent;color:var(--ink3);width:24px;height:24px;border-radius:6px;font-size:14px}
+.toast .x:hover{background:var(--chip)}
+.toast .bar{position:absolute;left:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--g2),var(--g4));animation:bar 6s linear forwards}
+.toast:hover .bar{animation-play-state:paused}
+/* центр уведомлений */
+.npanel{max-height:min(520px,calc(100vh - 40px));overflow:auto;padding:12px 6px 6px}
+.npanel h5{padding:0 8px}
+.nitem{display:flex;gap:10px;padding:10px 8px;border-top:1px solid var(--line2);font-size:13px;align-items:flex-start}
+.nitem img{width:40px;height:40px;object-fit:contain;flex:0 0 40px}
+.nitem b{display:block;font-weight:600}
+.nitem span{color:var(--ink2)}
+.nitem small{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
+.nitem.unread{background:linear-gradient(90deg,rgba(0,226,255,.08),transparent)}
+.gam.full{background:var(--ok-soft);color:var(--ok)}
+@keyframes bar{from{width:100%}to{width:0}}
+@keyframes tin{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes tout{to{opacity:0;transform:translateX(30px)}}
+
+/* modal */
+.ovl{position:fixed;inset:0;background:rgba(19,24,27,.42);display:grid;place-items:center;z-index:70;animation:fade var(--base) var(--e-std);padding:16px}
+.modal{background:var(--surface);border-radius:20px;width:min(480px,100%);padding:24px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center;animation:pop var(--slow) var(--e-spring);position:relative}
+.modal .hero{width:100%;height:220px;border-radius:14px;background:radial-gradient(120% 90% at 50% 100%,#dff9ff 0,#eef3ff 55%,#f7f9fb 100%);display:grid;place-items:center;overflow:hidden}
+.modal .hero img{height:210px;animation:hop 1400ms var(--e-spring) 1, bob 3s ease-in-out 1.4s infinite}
+.modal h2{font-size:22px;font-weight:700}
+.modal p{color:var(--ink2)}
+.modal .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.modal .acts{display:flex;gap:8px;width:100%;margin-top:6px}
+.modal .acts .btn{flex:1}
+@keyframes pop{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}}
+@keyframes hop{0%{transform:translateY(40px) scale(.8);opacity:0}60%{transform:translateY(-12px) scale(1.04);opacity:1}100%{transform:none}}
+canvas#cf{position:fixed;inset:0;pointer-events:none;z-index:80}
+
+/* requests */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--ink3);font-weight:500;padding:10px 16px;border-bottom:1px solid var(--line2);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--line2);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.new td{animation:rowin 1200ms var(--e-std)}
+@keyframes rowin{from{background:var(--ok-soft)}}
+.tblwrap{overflow-x:auto}
+.form{padding:24px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fields .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink2);font-weight:500}
+label.f.done>span:after{content:" ✓";color:var(--ok)}
+.check{display:flex;gap:10px;align-items:center;font-size:14px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.aside{background:var(--hover);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;position:sticky;top:16px}
+.pbar{height:8px;border-radius:8px;background:var(--line2);overflow:hidden}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--g2),var(--g4));border-radius:8px;transition:width var(--slow) var(--e-std)}
+.pbar.pos i{background:linear-gradient(90deg,var(--g2),var(--ok))}
+.aside img{width:150px;align-self:center;transition:transform var(--slow) var(--e-spring)}
+.aside .hint{font-size:13px;color:var(--ink2)}
+.sent{padding:40px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.sent img{width:260px}
+
+/* cabinet */
+.levelcard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:24px;align-items:center;padding:24px;background:linear-gradient(120deg,#ffffff 0,#f1fbff 60%,#eef1ff 100%)}
+.levelcard img{width:140px;height:140px;object-fit:contain}
+.levelcard h2{font-size:24px}
+.levelcard .sub{color:var(--ink2)}
+.lvlsteps{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.lvlsteps span{font-size:12px;padding:3px 8px;border-radius:6px;background:var(--chip);color:var(--ink3)}
+.lvlsteps span.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.stat{text-align:right}
+.stat b{font-size:32px;display:block;line-height:1}
+.stat small{color:var(--ink3)}
+.asec{margin-top:28px}
+.asec h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;gap:8px;align-items:center}
+.asec h3 small{font-weight:500;color:var(--ink3);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.ach{padding:16px;display:flex;gap:14px;align-items:flex-start;transition:box-shadow var(--base)}
+.ach img{width:64px;height:64px;flex:0 0 64px;object-fit:contain;transition:filter var(--slow)}
+.ach.lock img{filter:grayscale(1) opacity(.45)}
+.ach.prog img{filter:grayscale(.6) opacity(.75)}
+.ach h4{font-size:14px;font-weight:600}
+.ach p{font-size:12px;color:var(--ink3);margin:2px 0 8px}
+.ach .foot{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ach .pbar{height:6px;margin-bottom:8px}
+.ach.fresh{box-shadow:var(--glow);animation:glow 1.6s ease-in-out 3}
+@keyframes glow{50%{box-shadow:0 0 0 2px var(--g2),0 8px 32px rgba(5,197,200,.4)}}
+.two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.hist{padding:8px 0}
+.hist div{display:flex;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--line2);font-size:13px;gap:12px}
+.hist div:last-child{border:0}
+.hist em{font-style:normal;color:var(--ok);font-weight:600;white-space:nowrap}
+.hist small{color:var(--ink3);display:block}
+.next{padding:18px;display:flex;flex-direction:column;gap:14px}
+
+/* demo strip */
+.demo{position:fixed;left:calc(76px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:55;background:#23262f;color:#fff;border-radius:14px;padding:8px 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100vw - 92px)}
+.demo b{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--g1);padding:0 6px}
+.demo button{height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;font-size:12px;font-weight:500;padding:0 10px}
+.demo button:hover{background:rgba(255,255,255,.1)}
+.demo .x{border:0;color:rgba(255,255,255,.6)}
+.demofab{position:fixed;left:76px;bottom:16px;z-index:55;height:28px;border-radius:999px;border:0;background:#23262f;color:var(--g1);font-size:11px;padding:0 12px;text-transform:uppercase;letter-spacing:.08em}
+
+.tip{position:fixed;z-index:90;max-width:320px;background:var(--ink);color:#fff;font-size:12px;padding:10px 12px;border-radius:10px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+
+@media (max-width:1100px){.split,.two,.form{grid-template-columns:1fr}.detail{position:static}.demo{max-width:calc(100vw - 280px)}}
+@media (max-width:760px){
+  .app{flex-direction:column}
+  .side{position:sticky;top:0;z-index:20;width:auto;height:auto;flex:none;flex-direction:row;background:var(--bg);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line2)}
+  .gsep{width:1px;height:20px}.side .grow{display:none}.nav.deco{display:none}[data-tip]:hover:after{display:none}
+  .head,.content{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .fields{grid-template-columns:1fr}.levelcard{grid-template-columns:1fr;text-align:center}.levelcard img{margin:auto}.stat{text-align:center}
+  .demo,.demofab{left:16px;max-width:calc(100vw - 32px)}
+  .kv{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important}
+  .toast,.modal,.ovl{animation:fade 200ms!important}
+}
+/* ── шапка страницы ── */
+.head{padding:14px 24px 10px 8px;display:flex;flex-direction:column;gap:4px}
+.hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:40px}
+.hrow h1{font-size:18px;font-weight:600}
+.crumb16{display:flex;align-items:center;gap:10px;font-size:16px;color:var(--ink3);min-width:0;flex-wrap:wrap}
+.crumb16 button{border:0;background:none;padding:0;color:var(--ink3);font-size:16px}
+.crumb16 button:hover{color:var(--ink2)}
+.crumb16 .sep{color:var(--line)}
+.crumb16 .cur{color:var(--ink);font-weight:500}
+.useful{margin-left:auto;border:0;background:none;color:var(--accent-ink);font-weight:600;font-size:13px;display:inline-flex;gap:6px;align-items:center;padding:4px}
+.hbadge{height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;border:0;position:relative}
+.hb-warn{background:#ffeedd;color:#e8590c}.hb-def{background:var(--chip);color:var(--ink2)}.hb-acc{background:var(--accent-soft);color:var(--accent-ink)}.hb-pos{background:var(--ok-soft);color:var(--ok)}.hb-neg{background:var(--danger-soft);color:var(--danger)}.hb-wa2{background:var(--warn-soft);color:var(--warn)}
+button.hbadge:hover{filter:brightness(.97)}
+
+/* ── пилюли-сегменты и круглые кнопки ── */
+.seg.pill{border-radius:999px;background:var(--chip)}
+.seg.pill button{border-radius:999px;height:32px;padding:0 12px;font-size:13px;display:inline-flex;gap:6px;align-items:center}
+.seg.pill .n{font-size:11px;color:var(--ink3);font-weight:500}
+.rbtn{width:32px;height:32px;border-radius:50%;border:0;background:var(--chip);display:grid;place-items:center;color:var(--ink2)}
+.rbtn:hover{background:var(--line2)}
+
+/* ── плитка задач ── */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.tgrid.list{grid-template-columns:1fr}
+.tcard{background:var(--surface);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:200px;border:0;text-align:left;cursor:pointer;transition:box-shadow var(--base) var(--e-std),transform var(--base) var(--e-std);min-width:0}
+.tcard:hover{box-shadow:0 6px 22px rgba(19,24,27,.08);transform:translateY(-1px)}
+div.tcard{cursor:default}div.tcard:hover{transform:none;box-shadow:none}
+.tgrid.list .tcard{min-height:0;display:grid;grid-template-columns:120px minmax(0,1fr) auto;align-items:center;gap:12px}
+.tgrid.list .tcard .tags{display:none}
+.tcard .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tcard h3{font-size:15px;font-weight:500;line-height:1.3}
+.st{height:22px;padding:0 8px;border-radius:999px;font-size:12px;display:inline-flex;gap:4px;align-items:center;white-space:nowrap}
+.st.new{background:var(--accent-soft);color:var(--accent-ink)}
+.st.work{background:#ffeedd;color:#e8590c}
+.st.done{background:var(--ok-soft);color:var(--ok)}
+.st.ret{background:var(--warn-soft);color:var(--warn)}
+.st.rej{background:var(--danger-soft);color:var(--danger)}
+.ptsc{color:var(--accent-ink);font-size:12px;font-weight:600;display:inline-flex;gap:4px;align-items:center}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{height:22px;padding:0 8px;border-radius:999px;background:var(--chip);font-size:12px;color:var(--ink2);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.tag.role{background:var(--accent-soft);color:var(--accent-ink)}
+.tfoot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tgrid.list .tfoot{margin:0}
+.date{height:24px;padding:0 8px;border-radius:999px;background:var(--chip);font-size:12px;color:var(--ink2);display:inline-flex;align-items:center;gap:4px}
+.date.hot{background:var(--danger-soft);color:var(--danger)}
+.aa{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);font-size:12px;font-weight:600;display:grid;place-items:center;flex:0 0 32px}
+
+/* ── оценка CSAT ── */
+.csat{order:99;background:var(--surface);border-radius:20px;padding:18px 18px 14px;text-align:center;box-shadow:var(--glow),0 12px 36px rgba(19,24,27,.16);position:relative;animation:tin var(--slow) var(--e-spring)}
+.csat h4{font-size:16px;font-weight:600;padding:0 20px}
+.csat .stars{margin:12px 0}
+.csat .stars button{font-size:30px}
+.csat .send{width:100%;height:32px;border-radius:10px;border:0;background:var(--chip);font-weight:600;font-size:13px}
+.csat .send:not([disabled]){background:var(--accent);color:#fff}
+.csat .x{position:absolute;top:10px;right:10px;border:0;background:transparent;color:var(--ink3);width:24px;height:24px}
+
+/* ── карточка инициативы ── */
+.inibar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.inibar .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn.chip{background:var(--chip);color:var(--ink);border-radius:999px;height:32px;padding:0 14px;font-size:13px}
+.btn.chip:hover{background:var(--line2)}
+.btn.pill{border-radius:999px;height:32px;padding:0 14px;font-size:13px}
+.ini{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+.ini-main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.ini-row2{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.box{background:var(--surface);border-radius:16px;padding:16px 18px;min-width:0}
+.box h3{font-size:18px;font-weight:600;margin-bottom:12px}
+.prow{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;padding:11px 0;border-bottom:1px solid var(--line2);font-size:14px;align-items:center}
+.prow:last-child{border:0}
+.prow span:first-child{color:var(--ink2);display:flex;gap:8px;align-items:center}
+.prow span:first-child svg{color:var(--accent)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px}
+.kpis small{display:block;color:var(--ink3);font-size:13px}
+.kpis b{font-size:22px;font-weight:500}
+.box.grad{background:linear-gradient(200deg,#d9efff 0,#ffffff 45%)}
+.qs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px;font-size:13px}
+.qs small{display:block;color:var(--ink3)}
+.qs b{font-weight:500;font-size:15px}
+.fld{margin-bottom:12px}.fld small{display:block;color:var(--ink3);font-size:12px;margin-bottom:2px}
+.links{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.links div{border:1px solid var(--line);border-radius:10px;padding:10px;height:96px;display:flex;flex-direction:column;justify-content:space-between;font-size:14px;color:var(--ink2)}
+.retpanel{background:var(--surface);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 0 0 1px var(--line);animation:tin var(--base) var(--e-std)}
+/* маршрут согласования */
+.tl{display:flex;flex-direction:column;padding:4px 0 0}
+.tlg{position:relative;padding:0 0 18px 26px}
+.tlg:before{content:"";position:absolute;left:7px;top:18px;bottom:0;width:2px;background:var(--line)}
+.tlg:last-child:before{display:none}
+.tlg.green:before{background:var(--ok)}
+.tlg>.dot{position:absolute;left:0;top:3px;width:16px;height:16px;border-radius:50%;background:var(--line);border:3px solid var(--bg);box-sizing:content-box;margin:-3px}
+.tlg.green>.dot{background:var(--ok)}
+.tlg.orange>.dot{background:var(--surface);box-shadow:inset 0 0 0 2px #f27a1a}
+.tlg h4{font-size:17px;font-weight:500;color:var(--ink3);margin-bottom:6px}
+.tlg.green h4{color:var(--ok)}.tlg.orange h4{color:#e8590c}
+.tls{display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line2);font-size:13px;transition:background var(--slow)}
+.tls:last-child{border:0}
+.tls i{flex:0 0 14px;width:14px;height:14px;border-radius:50%;background:var(--line2);margin-top:2px;display:grid;place-items:center;color:#fff;font-style:normal;font-size:9px}
+.tls.ok i{background:var(--ok)}
+.tls.cur i{background:#f27a1a}
+.tls.ret i{background:var(--warn)}
+.tls.rej i{background:var(--danger)}
+.tls.pend{color:var(--ink2)}
+.tls small{display:block;color:var(--ink3);font-size:11.5px;margin-top:2px}
+.tls.flash{animation:flash 1.4s var(--e-std)}
+@keyframes flash{from{background:var(--ok-soft)}}
+
+/* ── модалка успеха (по макету) ── */
+.modal{padding:0 0 22px;overflow:hidden;gap:10px}
+.modal .hero{height:200px;border-radius:0;background:radial-gradient(70% 95% at 50% 0%,rgba(88,255,110,.55) 0,rgba(5,197,200,.18) 45%,rgba(255,255,255,0) 75%),var(--surface)}
+.modal .hero img{height:190px}
+.modal .mx{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:0;background:var(--chip);color:var(--ink2);font-size:14px}
+.modal .tt{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:0 24px}
+.modal h2{font-size:18px;font-weight:600}
+.modal p{padding:0 24px;font-size:13px}
+.modal .acts{padding:0 24px;justify-content:center}
+.modal .acts .btn{flex:0 1 auto;height:36px;font-size:13px}
+
+/* ── отчёты ── */
+.rep{display:grid;grid-template-columns:280px minmax(0,1fr);gap:8px;align-items:start}
+.rcat{padding:16px 10px}
+.rcat h3{font-size:18px;padding:0 8px;margin-bottom:12px}
+.grp{font-size:14px;color:var(--ink);padding:8px;display:flex;align-items:center;gap:6px}
+.grp .cnt2{margin-left:auto;font-size:11px;background:var(--chip);border-radius:999px;padding:1px 7px;color:var(--ink2)}
+.ritem{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 22px;border-radius:10px;font-size:13.5px;color:var(--ink);min-width:0}
+.ritem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ritem.cur{background:var(--chip)}
+.ritem small{display:block;color:var(--ink3);font-size:11px}
+.starb{border:0;background:transparent;color:var(--ink3);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:0 0 26px}
+.starb.on{color:#f2a516}
+.starb:hover{background:var(--line2)}
+.rtab{padding:0;overflow:hidden}
+.rtool{display:flex;gap:6px;align-items:center;padding:10px;border-bottom:1px solid var(--line2);flex-wrap:wrap}
+.rtool .search{flex:1;min-width:160px;display:flex;align-items:center;gap:6px;color:var(--ink3);font-size:13px;padding:0 8px}
+.tb{height:32px;border-radius:8px;border:0;background:var(--chip);padding:0 10px;font-size:13px;font-weight:500;display:inline-flex;gap:6px;align-items:center;color:var(--ink);white-space:nowrap}
+.tb:hover{background:var(--line2)}
+.tb.on{background:var(--accent-soft);color:var(--accent-ink)}
+.tb.done{box-shadow:inset 0 0 0 1px rgba(26,158,50,.35)}
+.rflt{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line2);font-size:12.5px;color:var(--ink2);flex-wrap:wrap}
+.fchip{height:24px;border-radius:6px;background:var(--chip);padding:0 8px;display:inline-flex;align-items:center;gap:5px;font-weight:500;color:var(--ink);animation:tin var(--base) var(--e-spring)}
+.fchip button{border:0;background:none;padding:0;color:var(--ink3);font-size:12px}
+.fchip.view{background:var(--accent-soft);color:var(--accent-ink)}
+.rtbl{overflow:auto;max-height:calc(100vh - 230px)}
+.rtbl table{font-size:13px;min-width:760px}
+.rtbl th{background:#ecf6fc;color:var(--ink);font-weight:600;position:sticky;top:0;padding:8px 12px;border-bottom:1px solid var(--line)}
+.rtbl th.num,.rtbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.rtbl td{padding:7px 12px}
+.rtbl tr.bank td{font-weight:600;background:#f7fbfe}
+.rtbl tr:hover td{background:var(--hover)}
+.ib{border:0;background:none;padding:0 0 0 4px;color:var(--accent);vertical-align:-2px}
+.sorted{color:var(--accent-ink)}
+/* кольцо прогресса «Путь аналитика» */
+.gam{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 4px;border-radius:999px;border:0;background:var(--chip);font-weight:600;font-size:13px;color:var(--ink);position:relative}
+.gam:hover{box-shadow:var(--glow)}
+.gam circle.v{transition:stroke-dashoffset .7s var(--e-std)}
+.pop{position:fixed;z-index:65;background:var(--surface);border-radius:14px;box-shadow:0 12px 40px rgba(19,24,27,.22);border:1px solid var(--line2);padding:12px;animation:tin var(--base) var(--e-std);max-width:calc(100vw - 32px)}
+.pop h5{font-size:14px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pop .glvl{font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:2px 8px}
+.gitem{display:flex;align-items:center;gap:10px;padding:8px 2px;border-top:1px solid var(--line2);font-size:13px}
+.gitem img{width:30px;height:30px;flex:0 0 30px;filter:grayscale(1) opacity(.5)}
+.gitem.ok img{filter:none}
+.gitem .sub2{font-size:11.5px;color:var(--ink3);line-height:1.35}
+.gitem .xp{font-size:11px;font-weight:700;color:var(--ink3);white-space:nowrap}
+.gitem.ok .xp{color:var(--ok)}
+.gitem.ok b{color:var(--ink2)}
+.popbtn{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px;font-size:13px}
+.popbtn:hover{background:var(--hover)}
+.burst{position:fixed;z-index:85;pointer-events:none;width:0;height:0}
+.burst i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:var(--c);animation:burst 700ms var(--e-std) forwards}
+@keyframes burst{from{transform:rotate(var(--a)) translateX(0);opacity:1}to{transform:rotate(var(--a)) translateX(var(--d));opacity:0}}
+.popstar{animation:bump 520ms var(--e-spring)}
+
+@media (max-width:1200px){.ini{grid-template-columns:1fr}.ini-main{grid-template-columns:1fr 1fr}.rep{grid-template-columns:1fr}}
+@media (max-width:760px){.ini-main,.ini-row2{grid-template-columns:1fr}.prow{grid-template-columns:1fr}.links{grid-template-columns:1fr}.inibar .acts{margin-left:0}.useful{margin-left:0}.qs{grid-template-columns:repeat(3,1fr)}}
+
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <nav class="side" aria-label="Разделы FinAI">
+    <div class="logo" title="FinAI"><svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="#202e3d"/><circle cx="16" cy="16" r="7" fill="#25deef"/><circle cx="32" cy="16" r="7" fill="#25deef"/><circle cx="48" cy="16" r="7" fill="#009efd"/><circle cx="16" cy="32" r="7" fill="#47f991"/><circle cx="32" cy="32" r="7" fill="#25deef"/><circle cx="16" cy="48" r="7" fill="#ad91fc"/></svg></div>
+    <div class="gsep"></div>
+    <button class="nav" data-go="tasks" data-tip="Мои задачи" aria-label="Мои задачи"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L16 9.5"/></svg><span class="cnt" id="navcnt"></span></button>
+    <button class="nav deco" data-tip="Календарь" aria-label="Календарь"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
+    <button class="nav deco" data-tip="Сообщения" aria-label="Сообщения"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 18.5V6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9z"/></svg></button>
+    <div class="gsep"></div>
+    <button class="nav" data-go="req" data-tip="Заявки" aria-label="Заявки"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4.5 4.5v12.5H7z"/><path d="M14 3.5V8h4.5M10 13h5.5M10 16.5h5.5"/></svg></button>
+    <button class="nav" data-go="rep" data-tip="Отчёты" aria-label="Отчёты"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M9.5 9.5v10"/></svg></button>
+    <button class="nav" data-go="cab" data-tip="Достижения" aria-label="Достижения"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM6 5H4v2a3 3 0 0 0 3 3M18 5h2v2a3 3 0 0 1-3 3M12 13v4M8.5 20.5h7M9.5 17h5"/></svg><span class="cnt okc" id="achcnt" hidden></span></button>
+    <div class="grow" style="flex:1"></div>
+    <button class="nav deco" data-tip="Ещё" aria-label="Ещё"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></button>
+    <button class="nav deco" data-tip="Помощь" aria-label="Помощь"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 1 1 3.4 2.4c-.7.3-.9.8-.9 1.6"/><path d="M12 16.6v.4"/></svg></button>
+    <button class="nav" id="bell" data-popbtn data-tip="Уведомления" aria-label="Уведомления"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 10a6 6 0 1 1 12 0c0 3 1 4.5 2 5.5H4c1-1 2-2.5 2-5.5z"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0"/></svg><span class="cnt" id="bellcnt">99+</span></button>
+    <button class="me" data-go="cab" id="me"></button>
+  </nav>
+  <main class="main">
+    <header class="head" id="head"></header>
+    <div class="content" id="view"></div>
+  </main>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="modalroot"></div>
+<canvas id="cf"></canvas>
+<div id="demoroot"></div>
+
+<script>
+/* ============ ДАННЫЕ ============ */
+const IMG=n=>'img/'+n+'.png';
+const LEVELS=[
+  {name:'Новичок',min:0,img:'lvl_novice'},
+  {name:'Практик',min:200,img:'lvl_confident'},
+  {name:'Эксперт',min:600,img:'lvl_expert'},
+  {name:'Лидер эффективности',min:1500,img:'lvl_expert'}];
+const ACH=[
+ {id:'no_tails',sec:'Задачи',name:'Без хвостов',desc:'Закрыть все задачи за день',pts:15,img:'ach_focus',goal:1,v:s=>s.allClosed?1:0},
+ {id:'punctual',sec:'Задачи',name:'Пунктуальность',desc:'5 дней подряд без просрочек',pts:30,img:'ach_collector',goal:5,v:s=>5},
+ {id:'first_appr',sec:'Согласование',name:'Первое согласование',desc:'Согласовать первую инициативу',pts:50,img:'ach_rating',goal:1,v:s=>s.approvals},
+ {id:'partner',sec:'Согласование',name:'Надёжный партнёр',desc:'10 согласований без просрочек',pts:100,img:'ach_collector',goal:10,v:s=>s.approvals},
+ {id:'speed',sec:'Согласование',name:'Скорость света',desc:'5 согласований в день поступления',pts:50,img:'ach_focus',goal:5,v:s=>s.apprToday},
+ {id:'first_req',sec:'Заявки',name:'Ваша первая заявка',desc:'Отправить первую заявку',pts:50,img:'ach_method',goal:1,v:s=>s.requests},
+ {id:'clean',sec:'Заявки',name:'Чистая работа',desc:'4 заявки подряд без возвратов',pts:40,img:'ach_view',goal:4,v:s=>s.reqClean},
+ {id:'budget',sec:'Заявки',name:'Утверждение бюджета',desc:'Заявка прошла весь маршрут',pts:100,img:'ach_rating',goal:1,v:s=>s.budgets},
+ {id:'rep_conf',sec:'Отчёты',name:'Уверенный пользователь',desc:'3 из 6 возможностей отчёта',pts:30,img:'lvl_confident',goal:3,v:s=>s.repGoals.length},
+ {id:'rep_exp',sec:'Отчёты',name:'Эксперт отчётов',desc:'Все 6 возможностей отчёта',pts:60,img:'lvl_expert',goal:6,v:s=>s.repGoals.length},
+ {id:'team',sec:'Отчёты',name:'Командный игрок',desc:'Поделиться отчётом с коллегой',pts:10,img:'ach_team',goal:1,v:s=>s.repGoals.includes('share')?1:0},
+ {id:'known',sec:'Профиль',name:'Узнаваемый',desc:'Добавить фото в профиль',pts:10,img:'ach_view',goal:1,v:s=>1},
+ {id:'voice',sec:'Профиль',name:'Голос пользователя',desc:'Оставить 3 отзыва о сервисе',pts:15,img:'ach_team',goal:3,v:s=>s.reviews},
+ {id:'leader',sec:'Профиль',name:'Лидер эффективности',desc:'Набрать 1500 баллов',pts:200,img:'lvl_expert',goal:1500,v:s=>s.points}];
+const SECS=['Задачи','Согласование','Заявки','Отчёты','Профиль'];
+const MILESTONES=[10,25,50,100];
+const TASKS0=[
+ {id:1,title:'Согласовать бюджет Центра затрат',st:'Новая',mod:'Модуль инициатив',roles:[],due:'22.10.2026',hot:1,ini:'Оптимизация затрат Центра обслуживания'},
+ {id:2,title:'Согласовать бюджет Спец мероприятия',st:'В работе',mod:'Инициативы',roles:[],due:'22.10.2026',hot:1,ini:'Стратегическая сессия блока «Финансы»'},
+ {id:3,title:'Согласовать объемы по ЦФО «Санкт-Петербург» трайбу Корпоративный бизнес',st:'В работе',mod:'Инициативы',roles:[],due:'22.10.2026',hot:1,ini:'Объёмы ЦФО «Санкт-Петербург» · Корпоративный бизнес'},
+ {id:4,title:'Согласовать инициативы',st:'Новая',mod:'Модуль инициатив',roles:['Лидер продукта'],due:'24.10.2026',ini:'Разработан и внедрен AI-агент по оценке инициатив в FinAI'},
+ {id:5,title:'Согласовать инициативы',st:'Новая',mod:'Модуль инициатив',roles:['ИТ Лидер Трайба'],due:'24.10.2026',ini:'Миграция BI-платформы в облако'},
+ {id:6,title:'Доработать инициативы',st:'Новая',kind:'rework',mod:'Модуль инициатив',roles:['Владелец продукта'],due:'24.10.2026',ini:'Автоматизация платёжного календаря'},
+ {id:7,title:'Согласовать инициативы',st:'Новая',mod:'Модуль инициатив',roles:['Финансовый контролер'],due:'27.10.2026',ini:'Единый каталог данных казначейства'},
+ {id:8,title:'Согласовать бюджет Блока',st:'В работе',mod:'Инициативы',roles:[],due:'27.10.2026',ini:'Бюджет блока «Финансы» на 2027 год'},
+ {id:9,title:'Согласовать объемы по ЦФО «Новосибирск» трайбу Инфраструктура',st:'В работе',mod:'Инициативы',roles:[],due:'28.10.2026',ini:'Объёмы ЦФО «Новосибирск» · Инфраструктура'},
+ {id:10,title:'Согласовать отзыв инициатив',st:'В работе',mod:'Инициативы',roles:['Лидер продукта'],due:'28.10.2026',ini:'Отзыв инициативы «Пилот RPA в бухгалтерии»'},
+ {id:11,title:'Согласовать объемы по ЦФО «Санкт-Петербург» трайбу Корпоративный бизнес',st:'В работе',mod:'Инициативы',roles:[],due:'29.10.2026',ini:'Объёмы ЦФО «Санкт-Петербург» · КБ, II этап'}];
+const REQ0=[
+ {id:'ЗК-1042',name:'Закупка ноутбуков для аналитиков',type:'Закупка',sum:'1 240 000 ₽',st:'Утверждена'},
+ {id:'ЗК-1057',name:'Командировка на форум «Финансы 2026»',type:'Командировка',sum:'86 000 ₽',st:'На согласовании'},
+ {id:'ЗК-1061',name:'Бюджет маркетинга на IV квартал',type:'Бюджетная',sum:'—',st:'Черновик'}];
+const HIST0=[
+ {t:'Достижение «Пунктуальность»',d:'20 окт',p:30},{t:'Цель дня выполнена',d:'20 окт',p:15},{t:'Задачи в срок · 8',d:'14–20 окт',p:40},
+ {t:'Цель дня выполнена',d:'17 окт',p:15},{t:'Достижение «Узнаваемый»',d:'14 окт',p:10},{t:'Отзыв о сервисе',d:'14 окт',p:5}];
+
+/* ============ СОСТОЯНИЕ ============ */
+function fresh(){return {notifs:[],unread:0,week:40,repGoals:[],archive:[],csatShown:false,points:115,approvals:0,apprToday:0,noReturn:0,requests:0,reqClean:0,budgets:0,reviews:1,
+  dayDone:2,dayGoal:5,dayGoalPaid:false,allClosed:false,tasks:JSON.parse(JSON.stringify(TASKS0)),reqs:JSON.parse(JSON.stringify(REQ0)),
+  unlocked:['punctual','known'],hist:JSON.parse(JSON.stringify(HIST0)),modalShown:false,lastToast:0,fresh:[],seq:1062}}
+let S; try{S=JSON.parse(localStorage.getItem('finai-gam3')||'null')}catch(e){}
+if(!S||!S.tasks||!S.archive||!S.notifs)S=fresh();
+function save(){try{localStorage.setItem('finai-gam3',JSON.stringify(S))}catch(e){}}
+let UI={view:'tasks',seg:'all',grid:true,ini:null,iniTab:'Общее',rep:{},form:null,cabVar:'A',sent:null,throttle:true};
+try{const h=location.hash.slice(1);if(['tasks','req','rep','cab'].includes(h))UI.view=h}catch(e){}
+
+const lvlOf=p=>{let i=0;LEVELS.forEach((l,k)=>{if(p>=l.min)i=k});return i};
+const fmt=n=>n.toLocaleString('ru-RU');
+const plural=(n,a,b,c)=>{n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return c;if(n1>1&&n1<5)return b;if(n1==1)return a;return c};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============ ДВИЖОК БАЛЛОВ ============ */
+// начисление: общий счёт, счёт недели, история; возвращает новый уровень, если он сменился
+function award(p,t){const before=lvlOf(S.points);S.points+=p;S.week+=p;S.hist.unshift({t,d:'Сегодня',p});const after=lvlOf(S.points);floatPts(p);return after>before?after:null}
+function checkAch(){const out=[];ACH.forEach(a=>{if(S.unlocked.includes(a.id))return;if(a.v(S)>=a.goal){S.unlocked.push(a.id);S.fresh.push(a.id);out.push(a)}});return out}
+/* Правила: не больше одной модалки за сессию; рутинные тосты — не чаще раза в 30 с; достижения показываем всегда */
+function celebrate(evs){
+  let lv=null;
+  evs.filter(e=>e.kind==='ach').forEach(e=>{const l=award(e.a.pts,'Достижение «'+e.a.name+'»');if(l!=null)lv=l});
+  evs.filter(e=>e.kind==='bonus').forEach(e=>{const l=award(e.pts,e.t);if(l!=null)lv=l});
+  if(lv!=null)evs.push({kind:'level',lv,big:true});
+  // «Эксперт отчётов» — всегда модалка (так задано в сценарии отчётов); остальные большие события — одна модалка за сессию
+  const forced=evs.find(e=>e.kind==='ach'&&e.a.id==='rep_exp');
+  const bigs=evs.filter(e=>e.big);
+  let modalEv=null;
+  if(forced)modalEv=forced;else if(bigs.length&&!S.modalShown)modalEv=bigs[0];
+  if(modalEv){S.modalShown=true;confetti()}else if(bigs.length)confetti(.5);
+  // порядок показа: достижения через 500 мс друг за другом, уровень — через 300 мс после последнего
+  const lvlLike=e=>e.kind==='level'||(e.kind==='ach'&&e.a.id==='rep_conf');
+  const q=evs.filter(e=>e!==modalEv&&!lvlLike(e)).concat(evs.filter(e=>e!==modalEv&&lvlLike(e)));
+  let d=300,last=0;
+  q.forEach((e,k)=>{
+    if(k>0)d+=lvlLike(e)?300:500;
+    const at=d;
+    setTimeout(()=>notifyEv(e),at);last=at;
+  });
+  if(modalEv)setTimeout(()=>showModal(modalEv),q.length?last+300:150);
+  save();render();
+}
+function notifyEv(e){
+  if(e.kind==='goal')return toast({img:IMG(e.g.img),title:'Достижение «'+e.g.t+'»',text:e.text,act:['Путь аналитика','gam']});
+  if(e.kind==='ach'&&e.a.id==='rep_conf')return toast({img:IMG('lvl_confident'),cat:1,title:'Новый уровень: «Уверенный пользователь»',text:'+30 баллов. Откройте ещё возможности отчёта — до «Эксперта» три шага',act:['Путь аналитика','gam']});
+  if(e.kind==='ach'&&e.a.id==='team')return; // дублирует цель «Командный игрок» из «Пути аналитика»
+  if(e.kind==='ach'&&e.a.id==='first_req')return toast({img:IMG(e.a.img),title:'Достижение «Ваша первая заявка»',text:'+50 баллов. Следующее — «Чистая работа»: 4 заявки подряд без возвратов',act:['Открыть кабинет','cab']});
+  if(e.kind==='ach')return toast({img:IMG(e.a.img),title:'Достижение «'+e.a.name+'»',text:'+'+e.a.pts+' баллов · '+e.a.desc,act:['Открыть кабинет','cab']});
+  if(e.kind==='level'){const L=LEVELS[e.lv];return toast({img:IMG(L.img),cat:1,title:'Новый уровень: «'+L.name+'»',text:'Вы набрали '+fmt(S.points)+' баллов. Новые достижения ждут в кабинете',act:['Открыть кабинет','cab']})}
+  if(e.kind==='milestone')return toast({img:IMG('finni_done'),cat:1,title:e.n+' согласований!',text:'+100 баллов за круглую цифру',act:['Открыть кабинет','cab']});
+  if(e.kind==='bonus')return toast({img:IMG('finni_done'),cat:1,title:e.t,text:'+'+e.pts+' баллов',act:['Открыть кабинет','cab']});
+  if(e.kind==='routine'){const now=Date.now();
+    if(!UI.throttle||now-S.lastToast>30000){S.lastToast=now;toast({img:IMG(e.img||'finni_done'),cat:1,title:e.title,text:e.text,act:e.act})}
+    else logNotif({img:IMG(e.img||'finni_done'),title:e.title,text:e.text})}
+}
+
+/* ============ ДЕЙСТВИЯ ============ */
+function closeTask(t,kind){
+  S.tasks=S.tasks.filter(x=>x.id!==t.id);
+  S.dayDone++;
+  const evs=[];let got=0;
+  if(kind==='appr'){
+    S.approvals++;S.noReturn++;if(t.hot)S.apprToday++;
+    award(10,'Согласование «'+t.ini+'»');got=10;
+    if(MILESTONES.includes(S.approvals)&&S.approvals>1){award(100,'Веха: '+S.approvals+' согласований');got+=100;evs.push({kind:'milestone',big:true,n:S.approvals})}
+  } else if(kind==='task'){award(5,'Доработка в срок');got=5}
+  else {S.noReturn=0}
+  S.archive.unshift(Object.assign({},t,{res:kind,got}));
+  if(S.dayDone>=S.dayGoal&&!S.dayGoalPaid){S.dayGoalPaid=true;evs.push({kind:'bonus',pts:15,t:'Цель дня выполнена — '+S.dayGoal+' из '+S.dayGoal})}
+  if(!S.tasks.length)S.allClosed=true;
+  checkAch().forEach(a=>evs.push(a.id==='first_appr'?{kind:'ach',a,big:true}:{kind:'ach',a}));
+  const first=evs.find(e=>e.kind==='ach'&&e.a.id==='first_appr');
+  if(first)evs.sort((a,b)=>(b===first)-(a===first));
+  if(!evs.some(e=>e.big)){
+    const n=S.noReturn;
+    if(kind==='appr')evs.unshift({kind:'routine',title:'Инициатива согласована',text:'+10 баллов · '+(n>=3?n+' '+plural(n,'согласование','согласования','согласований')+' подряд без возвратов':'передана Руководителю ДИТ'),act:['К реестру','tasks']});
+    if(kind==='task')evs.unshift({kind:'routine',title:'Отправлено на согласование',text:'+5 баллов · доработка сдана в срок',act:['К реестру','tasks']});
+    if(kind==='ret')toast({img:IMG('finni_empty'),title:'Инициатива возвращена автору',text:'Серия «без возвратов» начнётся заново'});
+    if(kind==='rej')toast({img:IMG('finni_empty'),title:'Инициатива отклонена',text:'Автор получит уведомление с причиной'});
+  }
+  celebrate(evs);
+  if(S.approvals>=3&&!S.csatShown)setTimeout(showCsat,2600);
+}
+
+/* ============ ВЁРСТКА ============ */
+const $=s=>document.querySelector(s);
+const ICO={
+ check:'<svg class="chk" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+ flame:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 4.6 5 10a5 5 0 0 1-10 0c0-2.3 1.2-3.8 2-4.6 0 1.6.8 2.6 1.8 2.6C12 6 12 2 12 2z"/></svg>',
+ target:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg>',
+ star:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>'};
+const VIEWS={
+ tasks:{info:'Задачи и согласования, назначенные на вас. За действия в срок начисляются баллы: согласование +10, доработка +5, цель дня +15.'},
+ ini:{info:'Карточка инициативы. Согласование в срок +10 баллов; первое согласование и круглые цифры (10, 25, 50, 100) празднуем отдельно.'},
+ req:{info:'Реестр ваших заявок. Создание заявки +10 баллов, первая заявка +50, полный маршрут утверждения +100.'},
+ rep:{info:'«Путь аналитика»: 6 возможностей отчёта, каждая +10 баллов. 3 из 6 — «Уверенный пользователь», 6 из 6 — «Эксперт отчётов».'},
+ cab:{info:'Баллы, уровни и достижения со всех разделов FinAI. Уровни: Новичок 0–199 · Практик 200–599 · Эксперт 600–1499 · Лидер эффективности 1500+.'}};
+Object.assign(ICO,{
+ coin:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8.5"/><path d="M9 10.5c0-1.4 1.3-2 3-2s3 .7 3 2-1.3 1.7-3 2-3 .7-3 2 1.3 2 3 2 3-.6 3-2M12 6.5v11"/></svg>',
+ ext:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 16 17 7M9 7h8v8"/></svg>',
+ fire:'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 4.6 5 10a5 5 0 0 1-10 0c0-2.3 1.2-3.8 2-4.6 0 1.6.8 2.6 1.8 2.6C12 6 12 2 12 2z"/></svg>',
+ cal:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
+ sliders:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+ grid:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',
+ list:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.5M4.5 12h.5M4.5 18h.5"/></svg>',
+ info:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>',
+ bulb:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 15.5h5M10.5 18h3M12 6a4 4 0 0 0-2.2 7.3V15h4.4v-1.7A4 4 0 0 0 12 6z"/></svg>',
+ dots:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg>',
+ brief:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M9 4h6a1 1 0 0 1 1 1v2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3V5a1 1 0 0 1 1-1zm1 3h4V6h-4z"/></svg>',
+ person:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c.8-4 4-6 8-6s7.2 2 8 6z"/></svg>',
+ starF:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+ starO:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg>',
+ pen:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+ search:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>',
+ filter:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 5h16l-6.2 7.3V19l-3.6-1.8v-4.9z"/></svg>',
+ sort:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M8 4v16M4.5 16.5 8 20l3.5-3.5M14 6h6M14 11h4.5M14 16h3"/></svg>',
+ save:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>',
+ share:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/></svg>',
+ lock:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>',
+ caret:'<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9h12l-6 7z"/></svg>'});
+
+/* ---- ШАПКА ---- */
+function headHTML(){
+  const li=lvlOf(S.points),L=LEVELS[li];
+  const info=`<button class="info" id="infobtn" aria-label="О разделе">${ICO.info}</button>`;
+  const useful=`<button class="useful" id="useful">${ICO.bulb}Полезно знать</button>`;
+  const goalDone=S.dayDone>=S.dayGoal;
+  if(UI.view==='tasks')return `<div class="hrow"><h1>Мои задачи</h1>${info}
+    <span class="hbadge hb-warn" title="Дней подряд без просрочек">Серия: 5 дней без просрочек</span>
+    <span class="hbadge ${goalDone?'hb-pos':'hb-def'}" id="goalb">${goalDone?ICO.check:''}Цель дня: ${Math.min(S.dayDone,S.dayGoal)} из ${S.dayGoal}</span>
+    <button class="hbadge hb-acc" id="ptsb" data-go="cab">+${fmt(S.week)} баллов за неделю</button>${useful}</div>`;
+  if(UI.view==='ini'){const t=findTask(UI.ini);const I=iniOf(t);const st=t.res?RES[t.res]:['acc','На согласовании'];
+    return `<div class="hrow"><div class="crumb16"><button data-go="tasks">Инициативы</button><span class="sep">›</span><span class="cur">${esc(I.name)}</span></div>
+    <span style="margin-left:auto"></span>${info}<span class="hbadge hb-${st[0]==='done'?'pos':st[0]==='ret'?'wa2':st[0]==='rej'?'neg':'acc'}" id="inistat">${st[1]}</span><span class="hbadge hb-def">ID ${I.code}</span><span class="hbadge hb-acc">Ключевая инициатива</span>${useful.replace('margin-left:auto','')}</div>`}
+  if(UI.view==='rep'){const n=S.repGoals.length,gp=n/GOALS.length;
+    return `<div class="hrow"><div class="crumb16"><span>Инициативы</span><span class="sep">/</span><span>Отчёты</span><span class="sep">/</span><span class="cur">Численность по инициативам</span></div>
+    <span class="hbadge hb-pos">${ICO.check}Согласовано</span>
+    <button class="gam ${n===GOALS.length?'full':''}" id="gambtn" data-popbtn title="Путь аналитика: освоено возможностей отчёта" aria-label="Путь аналитика: ${n} из ${GOALS.length}"><svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="var(--line)" stroke-width="3"/><circle class="v" cx="13" cy="13" r="10" fill="none" stroke="${n===GOALS.length?'var(--ok)':'var(--accent)'}" stroke-width="3" stroke-linecap="round" transform="rotate(-90 13 13)" stroke-dasharray="62.83" stroke-dashoffset="${62.83*(1-gp)}"/></svg><span>Путь аналитика · ${n} из ${GOALS.length}</span></button>
+    <span style="margin-left:auto"></span><button class="hbadge hb-def" id="ptsb" data-go="cab">${fmt(S.points)} баллов</button>${info}</div>`}
+  const c=UI.view==='req'?['Заявки']:['Профиль','Достижения'];
+  const title=UI.view==='req'?'Заявки':'Кабинет достижений';
+  return `<div class="crumbs"><span>Главная</span>${c.map(x=>'<span>'+x+'</span>').join('')}</div><div class="hrow"><h1>${title}</h1>${info}
+   <div class="badges">${UI.view==='cab'?`<span class="hbadge hb-acc">${ICO.star}${L.name}</span>`:''}<button class="hbadge hb-def" id="ptsb" data-go="cab">${fmt(S.points)} баллов</button></div></div>`;
+}
+function render(){
+  if(UI.view==='ini'&&!findTask(UI.ini))UI.view='tasks';
+  const navv=UI.view==='ini'?'tasks':UI.view;
+  document.querySelectorAll('.nav[data-go]').forEach(n=>n.setAttribute('aria-current',n.dataset.go===navv?'page':'false'));
+  $('#navcnt').textContent=S.tasks.length||'';$('#navcnt').hidden=!S.tasks.length;
+  const li=lvlOf(S.points),L=LEVELS[li],N=LEVELS[li+1];
+  const pct=N?Math.round((S.points-L.min)/(N.min-L.min)*100):100;
+  const me=$('#me');me.style.setProperty('--p',pct+'%');me.dataset.tip='Мария Котова · '+L.name+' · '+fmt(S.points)+' баллов';me.setAttribute('aria-label',me.dataset.tip);me.innerHTML=`<span class="ava">МК</span><span class="lv">${li+1}</span>`;
+  const bc=$('#bellcnt');bc.textContent=S.unread?S.unread:'99+';bc.className='cnt'+(S.unread?' okc':'');
+  const nf=S.fresh.length;$('#achcnt').hidden=!nf;$('#achcnt').textContent=nf?'+'+nf:'';
+  $('#head').innerHTML=headHTML();
+  closePop();
+  ({tasks:vTasks,ini:vIni,req:vReq,rep:vRep,cab:vCab})[UI.view]();
+  vDemo();
+}
+
+/* ---- ЗАДАЧИ (плитка по макету) ---- */
+const RES={appr:['done','Согласовано'],task:['done','Отправлено'],ret:['ret','На доработке'],rej:['rej','Отклонено']};
+const findTask=id=>S.tasks.find(x=>x.id===id)||S.archive.find(x=>x.id===id);
+function vTasks(){
+  const all=S.tasks,arch=S.archive,isArch=UI.seg==='arch';
+  const bar=`<div class="toolbar"><div class="seg pill" role="group" aria-label="Задачи"><button aria-pressed="${!isArch}" data-seg="all">Все <span class="n">${all.length}</span></button><button aria-pressed="${isArch}" data-seg="arch">Архив${arch.length?` <span class="n">${arch.length}</span>`:''}</button></div>
+    <button class="rbtn" aria-label="Фильтры">${ICO.sliders}</button>
+    <div class="seg pill" style="margin-left:auto" role="group" aria-label="Вид"><button aria-pressed="${UI.grid}" data-grid="1" aria-label="Плиткой">${ICO.grid}</button><button aria-pressed="${!UI.grid}" data-grid="0" aria-label="Списком">${ICO.list}</button></div></div>`;
+  let body;
+  if(isArch){
+    body=arch.length?`<div class="tgrid ${UI.grid?'':'list'}">${arch.map(t=>tcard(t,true)).join('')}</div>`:
+      `<div class="card empty"><img src="${IMG('finni_empty')}" alt="Финни у пустого лотка"><h2>В архиве пока пусто</h2><p>Согласованные и возвращённые задачи появятся здесь — вместе с баллами, которые они принесли.</p></div>`;
+  } else if(!all.length){
+    body=`<div class="card empty"><img src="${IMG('finni_relax')}" alt="Финни отдыхает на подушке">
+      <h2>Можно выдохнуть</h2><p>Все задачи на сегодня закрыты. Финни присмотрит за новыми — пришлём уведомление, как только что-то появится.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center"><span class="hbadge hb-pos">${ICO.check}${S.dayDone} закрыто сегодня</span><span class="hbadge hb-acc">${S.approvals} ${plural(S.approvals,'согласование','согласования','согласований')}</span><span class="hbadge hb-def">+${fmt(S.week)} баллов за неделю</span></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn sec" data-seg="arch">Открыть архив</button><button class="btn pri" data-go="cab">Мои достижения</button></div></div>`;
+  } else body=`<div class="tgrid ${UI.grid?'':'list'}">${all.map(t=>tcard(t,false)).join('')}</div>`;
+  $('#view').innerHTML=bar+body;
+}
+function tcard(t,arch){
+  const rework=t.kind==='rework';
+  const st=arch?RES[t.res]:(t.st==='Новая'?['new','Новая']:['work','В работе']);
+  const ico={new:'○',work:'◔',done:'✓',ret:'↺',rej:'✕'}[st[0]];
+  const inner=`<div class="top"><span class="st ${st[0]}">${ico} ${st[1]}</span>${arch?(t.got?`<span class="ptsc" style="color:var(--ok)">+${t.got}</span>`:''):`<span class="ptsc" title="Баллы за выполнение в срок">${ICO.coin}${rework?5:10}</span>`}</div>
+    <h3>${esc(t.title)}</h3>
+    <div class="tags"><span class="tag">${t.mod} ${ICO.ext}</span>${(t.roles||[]).map(r=>`<span class="tag role">${r}</span>`).join('')}</div>
+    <div class="tfoot"><span class="date ${t.hot&&!arch?'hot':''}">${t.hot&&!arch?ICO.fire:ICO.cal}${t.due}</span><span class="aa">АА</span></div>`;
+  return arch?`<div class="tcard">${inner}</div>`:`<button class="tcard" data-open="${t.id}" aria-label="${esc(t.title)}">${inner}</button>`;
+}
+
+/* ---- КАРТОЧКА ИНИЦИАТИВЫ (по макету) ---- */
+const ROUTE=['Владелец продукта','Лидер продукта','ИТ Лидер трайба','Лидер трайба','Руководитель ДИТ','Штаб блока','Владелец программы','Финансовый контролер'];
+const ME=3;
+function iniOf(t){const k=t.id;return {name:t.ini,code:'29834774'+(38763+k*7919),cost:(18+((k*13.37)%40)).toFixed(2).replace('.',','),eff:(60+((k*41.9)%160)).toFixed(2).replace('.',','),cv:(12+((k*5.3)%30)).toFixed(2).replace('.',','),rate:(18+((k*2.1)%10)).toFixed(2).replace('.',','),
+  type:k%3?'CHANGE':'RUN',score:(6+(k%4)*.5).toFixed(1).replace('.',','),ai:(6.4+(k%5)*.3).toFixed(1).replace('.',','),author:['Мельникова О.В.','Иванова Е.Н.','Смирнов Д.А.','Орлова Е.П.'][k%4]}}
+function vIni(){
+  const t=findTask(UI.ini),I=iniOf(t),res=t.res,rework=t.kind==='rework';
+  const tabs=`<div class="seg pill" role="group" aria-label="Разделы инициативы">${['Общее','Затраты','Эффекты'].map(x=>`<button aria-pressed="${UI.iniTab===x}" data-tab="${x}">${x}</button>`).join('')}</div>`;
+  let acts;
+  if(res==='appr')acts=`<button class="btn ok pill" disabled style="opacity:1;cursor:default">${ICO.check}Согласовано</button>`;
+  else if(res)acts=`<span class="hbadge hb-${res==='rej'?'neg':'wa2'}" style="height:32px">${RES[res][1]}</span>`;
+  else if(rework)acts=`<button class="btn pri pill" id="resend" style="min-width:210px">Отправить на согласование</button>`;
+  else acts=`<button class="btn chip" id="reject">Отклонить</button><button class="btn chip" id="ret">Отправить на доработку</button><button class="btn pri pill" id="approve" style="min-width:140px">Согласовать</button>`;
+  const steps=ROUTE.map((r,i)=>{let c='pend',sub='';
+    if(i<ME){c='ok'}
+    else if(i===ME){if(res==='appr'){c='ok flash';sub='<small>Вы · согласовано только что</small>'}else if(res==='ret'){c='ret';sub='<small>Вы · возвращено на доработку</small>'}else if(res==='rej'){c='rej';sub='<small>Вы · отклонено</small>'}else{c='cur';sub='<small>Ожидает вашего решения</small>'}}
+    else if(i===ME+1&&res==='appr'){c='cur';sub='<small>Передано только что</small>'}
+    return `<div class="tls ${c}"><i>${c.startsWith('ok')?'✓':''}</i><span>${r}${i===ME?' (вы)':''}${sub}</span></div>`}).join('');
+  $('#view').innerHTML=`<div class="inibar">${tabs}<div class="acts"><button class="rbtn" aria-label="Ещё">${ICO.dots}</button>${acts}</div></div>
+   <div id="retroot"></div>
+   <div class="ini"><div class="ini-main">
+     <section class="box"><div class="prow"><span>${ICO.brief}Период</span><span>Q1 2026 — Q4 2026</span></div><div class="prow"><span>${ICO.brief}Тип инициативы</span><span>${I.type}</span></div><div class="prow"><span>${ICO.starF}Оценка</span><span><u>${I.score}</u> · <u>${I.ai}</u> ✦</span></div><div class="prow"><span>${ICO.person}Автор</span><span>${I.author}</span></div></section>
+     <section class="box grad"><h3>Показатели</h3><div class="kpis"><div><small>Затраты, млн ₽</small><b>${I.cost}</b></div><div><small>Эффекты, млн ₽</small><b>${I.eff}</b></div><div><small>C/V, %</small><b>${I.cv}</b></div><div><small>Ставка дисконт, %</small><b>${I.rate}</b></div></div></section>
+     <section class="box"><h3>Метрики</h3><p style="color:var(--ink2);font-size:14px">Индивидуальная метрика фин эффективности: объём категорий адресных расходов, участвующих в приоритизации инициатив</p><div class="qs"><div><small>Q1</small><b>0</b></div><div><small>Q2</small><b>0</b></div><div><small>Q3</small><b>0</b></div><div><small>Q4</small><b>0</b></div><div><small>Год, %</small><b>100</b></div></div></section>
+     <div class="ini-row2">
+       <section class="box"><h3>Подробная информация</h3><div class="fld"><small>Название инициативы</small>${esc(I.name)}</div><div class="fld"><small>Описание</small>Инициатива направлена на повышение эффективности работы сотрудников за счёт автоматизации рутинных операций и прозрачного целеполагания на год, квартал и месяц.</div><div class="fld"><small>Источник инициативы</small>Блок «Финансы» / ГАК Digital Finance / Бюджетирование расходов</div><div class="fld"><small>Версия</small>БП</div></section>
+       <div style="display:flex;flex-direction:column;gap:16px;min-width:0"><section class="box"><h3>Классификация</h3><div class="prow"><span>Влияние</span><span>Рост операционной прибыли</span></div><div class="prow"><span>Направление</span><span>Развитие платформы</span></div><div class="prow"><span>Стрим</span><span>—</span></div><div class="prow"><span>Аналитика</span><span>—</span></div></section>
+       <section class="box"><h3>Связи инициативы</h3><div class="links"><div>⁂<span>Объединённые (4)</span></div><div>⌘<span>Квартальные (2)</span></div><div>⇄<span>Кросс-заказы (2)</span></div></div></section></div>
+     </div></div>
+     <aside class="tl" aria-label="Маршрут согласования">
+       <div class="tlg green"><span class="dot"></span><h4>Черновик</h4><div class="tls ok"><i>✓</i><span>Создана Лидером продукта</span></div><div class="tls ok"><i>✓</i><span>Отправлена на согласование Лидером продукта<small>Иванова Елена Николаевна · 17.10.2026, 16:45</small></span></div></div>
+       <div class="tlg ${res==='appr'?'orange':'orange'}"><span class="dot"></span><h4>На согласовании</h4>${steps}</div>
+       <div class="tlg"><span class="dot"></span><h4>Бюджет выделен</h4></div>
+     </aside></div>`;
+}
+function doApprove(btn){
+  const t=S.tasks.find(x=>x.id===UI.ini);if(!t)return;
+  document.querySelectorAll('.inibar .btn').forEach(b=>b.disabled=true);
+  btn.disabled=true;btn.style.opacity=1;btn.innerHTML='<span class="spin"></span>';
+  setTimeout(()=>{
+    btn.className='btn ok pill';btn.innerHTML=ICO.check+'Согласовано';
+    const sb=$('#inistat');if(sb){sb.className='hbadge hb-pos bump';sb.textContent='Согласовано'}
+    const cur=$('.tls.cur');if(cur){cur.className='tls ok flash';cur.querySelector('i').textContent='✓'}
+    setTimeout(()=>closeTask(t,'appr'),reduce?50:700);
+  },reduce?80:650);
+}
+function retPanel(kind){
+  $('#retroot').innerHTML=`<div class="retpanel"><b>${kind==='rej'?'Отклонить инициативу':'Отправить на доработку'}</b><textarea rows="2" placeholder="${kind==='rej'?'Причина отклонения':'Что нужно доработать?'}"></textarea><div style="display:flex;gap:8px"><button class="btn ${kind==='rej'?'sec':'pri'} sm" data-retgo="${kind}">${kind==='rej'?'Отклонить':'Отправить'}</button><button class="btn sec sm" data-retgo="cancel">Отмена</button></div></div>`;
+  $('#retroot textarea').focus();
+}
+
+/* ---- ОТЧЁТЫ: «Путь аналитика» ---- */
+const GOALS=[
+ {id:'fav',t:'Коллекционер',d:'Добавьте отчёт в избранное',img:'ach_collector',m:'Любимые отчёты теперь всегда под рукой'},
+ {id:'filter',t:'Точный фокус',d:'Отфильтруйте таблицу по аналитике',img:'ach_focus',m:'Вы видите только нужные данные'},
+ {id:'sort',t:'Рейтинг',d:'Отсортируйте строки по показателю',img:'ach_rating',m:'Лидеры и аутсайдеры — сверху'},
+ {id:'save',t:'Свой вид',d:'Сохраните настройки таблицы под своим названием',img:'ach_view',m:'Вид появился в каталоге рядом с отчётом'},
+ {id:'share',t:'Командный игрок',d:'Поделитесь отчётом с коллегой',img:'ach_team',m:'Коллега увидит отчёт так же, как вы'},
+ {id:'gloss',t:'Знаток методики',d:'Откройте описание показателя в справочнике',img:'ach_method',m:'Теперь вы знаете, как считается показатель'}];
+const REPLV=[[0,'Новичок'],[3,'Уверенный пользователь'],[6,'Эксперт отчётов']];
+const repLevel=n=>REPLV.filter(l=>n>=l[0]).pop()[1];
+const BANKS=['Байкальский банк','Уральский банк','Сибирский банк','Московский банк','Дальневосточный банк'];
+const BLOCKS=['Финансы','Риски','Международные операции','HR','Комплаенс-контроль'];
+const rnd=i=>{const x=Math.sin(i*12.9898+78.233)*43758.5453;return x-Math.floor(x)};
+const ROWS=[];BANKS.forEach((b,bi)=>BLOCKS.forEach((k,ki)=>{const base=200+rnd(bi*10+ki)*400;ROWS.push({b,k,v:[0,1,2,3].map(y=>Math.round(base*(1+y*.07+rnd(bi*100+ki*10+y)*.06)*1e6))})}));
+const CAT=[['Приоритизация инициатив'],['Организационные единицы трайбов'],['Бюджет на подрядчиков'],['Каскады инициатив'],['Численность по инициативам',1],['Показатели по инициативам'],['Аналитика единого каталога']];
+function vRep(){
+  const R=UI.rep;
+  const favs=[['Сводная модель','Сводная модель'],['Прямая стоимость (OPEX и CAPEX)','Аллокация и свод OPEX']].concat(R.fav?[['Численность по инициативам','Инициативы']]:[]);
+  const done=id=>S.repGoals.includes(id)?' done':'';
+  let rows=ROWS.filter(r=>!R.filter||r.b===R.filter);
+  let tb='';
+  if(R.sort){rows=rows.slice().sort((a,b)=>b.v[3]-a.v[3]);tb=rows.map(r=>`<tr><td>${r.b}</td><td>${r.k}</td>${r.v.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}</tr>`).join('')}
+  else BANKS.filter(b=>!R.filter||b===R.filter).forEach(b=>{tb+=`<tr class="bank"><td colspan="6">▾ ${b}</td></tr>`+rows.filter(r=>r.b===b).map(r=>`<tr><td></td><td>${r.k}</td>${r.v.map(x=>`<td class="num">${fmt(x)}</td>`).join('')}</tr>`).join('')});
+  $('#view').innerHTML=`<div class="rep">
+   <aside class="box rcat" aria-label="Каталог отчётов"><h3>Каталог</h3>
+     <div class="grp">▾ Избранное <span class="cnt2">${favs.length}</span></div>
+     ${favs.map(f=>`<div class="ritem"><span>${f[0]}<small>${f[1]}</small></span><span class="starb on" style="flex:0 0 26px">${ICO.starF}</span></div>`).join('')}
+     <div class="grp">▾ Инициативы</div>
+     ${CAT.map(c=>c[1]?`<div class="ritem cur"><span>${c[0]}</span><button class="starb ${R.fav?'on':''}" id="favbtn" aria-label="${R.fav?'Убрать из избранного':'В избранное'}" aria-pressed="${R.fav}">${R.fav?ICO.starF:ICO.starO}</button></div>`:`<div class="ritem"><span>${c[0]}</span></div>`).join('')}
+     <div class="grp">▸ Сводная модель</div><div class="grp">▸ Аллокация и свод OPEX</div><div class="grp">▸ Финансовые модели</div>
+   </aside>
+   <section class="box rtab">
+     <div class="rtool"><button class="tb">${ICO.pen}Редактировать</button><span class="search">${ICO.search}Поиск по таблице</span>
+       <button class="tb${R.filter?' on':''}${done('filter')}" id="fltbtn" data-popbtn>${ICO.filter}Фильтр ${ICO.caret}</button>
+       <button class="tb${R.sort?' on':''}${done('sort')}" id="sortbtn">${ICO.sort}${R.sort?'По 2026 ↓':'Сортировка'}</button>
+       <button class="tb${done('save')}" id="savebtn" data-popbtn>${ICO.save}Сохранить вид</button>
+       <button class="tb${done('share')}" id="sharebtn" data-popbtn>${ICO.share}Поделиться</button></div>
+     <div class="rflt">Фильтры <span class="fchip">${ICO.lock}Версия: Бюджет 2026 · основная</span>
+       ${R.filter?`<span class="fchip">Подразделение: ${R.filter} <button data-clearf aria-label="Сбросить фильтр">✕</button></span>`:'<span style="color:var(--ink3)">не применены</span>'}
+       ${R.view?`<span class="fchip view">Вид: ${esc(R.view)}</span>`:''}</div>
+     <div class="rtbl"><table><thead><tr><th>Подразделение</th><th>Функциональный блок</th>${[2023,2024,2025].map(y=>`<th class="num">${y} · Прибыль, руб.</th>`).join('')}<th class="num ${R.sort?'sorted':''}">2026 · Прибыль, руб.${R.sort?' ↓':''}<button class="ib" id="glossbtn" data-popbtn aria-label="Описание показателя">${ICO.info}</button></th></tr></thead><tbody>${tb}</tbody></table></div>
+   </section></div>`;
+}
+function burstAt(el,opt={}){if(!el||reduce)return;const r=el.getBoundingClientRect();const b=document.createElement('div');b.className='burst';b.style.left=(r.left+r.width/2)+'px';b.style.top=(r.top+r.height/2)+'px';
+  const n=opt.n||10,cols=['#58FF6E','#05C5C8','#00E2FF','#1999EE','#99AFFE'],dist=opt.d||28;
+  for(let i=0;i<n;i++){const s=document.createElement('i');s.style.setProperty('--a',(360/n*i+Math.random()*20)+'deg');s.style.setProperty('--d',(dist*(.7+Math.random()*.6))+'px');s.style.setProperty('--c',cols[i%cols.length]);b.appendChild(s)}
+  document.body.appendChild(b);setTimeout(()=>b.remove(),900);el.classList.remove('popstar');void el.offsetWidth;el.classList.add('popstar')}
+function repGoal(id,el){
+  if(S.repGoals.includes(id))return;
+  const g=GOALS.find(x=>x.id===id);burstAt(el);
+  S.repGoals.push(id);const n=S.repGoals.length;
+  award(10,'Отчёты: «'+g.t+'»');
+  const evs=[{kind:'goal',g,text:'+10 баллов · '+n+' из '+GOALS.length+'. '+(n===3?'Новый уровень: «Уверенный пользователь»':g.m)}];
+  checkAch().forEach(a=>evs.push({kind:'ach',a,big:a.id==='rep_exp'}));
+  celebrate(evs);
+}
+function gamPop(anchor){const n=S.repGoals.length;
+  pop(anchor,`<h5>Путь аналитика <span class="glvl">${repLevel(n)}</span></h5><div class="pbar" style="height:6px"><i style="width:${n/GOALS.length*100}%"></i></div>
+  <p style="font-size:12px;color:var(--ink3);margin:6px 0">${n===GOALS.length?'60 баллов · 6 из 6. Вы освоили все возможности отчёта.':n*10+' баллов · '+n+' из '+GOALS.length+'. Каждое действие открывает новую возможность отчёта.'}</p>
+  ${GOALS.map(g=>{const ok=S.repGoals.includes(g.id);return `<div class="gitem ${ok?'ok':''}"><img src="${IMG(g.img)}" alt=""><span style="flex:1;min-width:0"><b>${g.t}</b><div class="sub2">${g.d}</div></span><span class="xp">${ok?'✓ ':''}+10</span></div>`}).join('')}`,330)}
+function pop(anchor,html,w=300){closePop();const r=anchor.getBoundingClientRect();const d=document.createElement('div');d.className='pop';d.id='pop';d.style.width=w+'px';
+  d.style.left=Math.max(16,Math.min(r.left,innerWidth-w-16))+'px';d.style.top=Math.min(r.bottom+6,innerHeight-200)+'px';d.innerHTML=html;document.body.appendChild(d);return d}
+function closePop(){const p=document.getElementById('pop');if(p)p.remove()}
+
+/* ---- CSAT ---- */
+function showCsat(){
+  if(S.csatShown||$('.csat'))return;S.csatShown=true;save();
+  const el=document.createElement('div');el.className='csat';el.setAttribute('role','dialog');el.setAttribute('aria-label','Оценка раздела');
+  el.innerHTML=`<button class="x" data-csat="x" aria-label="Закрыть">✕</button><h4>Как вам работа с задачами?</h4><div class="stars">${[1,2,3,4,5].map(i=>`<button data-cs="${i}" aria-label="${i} из 5">★</button>`).join('')}</div><button class="send" data-csat="send" disabled>Отправить</button>`;
+  $('#toasts').appendChild(el);
+}
+
+/* ---- ЗАЯВКИ ---- */
+const FIELDS=[['type','Тип заявки'],['name','Название'],['sum','Сумма, ₽'],['cfo','ЦФО'],['why','Обоснование'],['file','Расчёт приложен']];
+function vReq(){
+  if(UI.sent){vSent();return}
+  if(UI.form){vForm();return}
+  $('#view').innerHTML=`<div class="toolbar"><button class="btn pri" id="newreq">+ Создать заявку</button><span style="color:var(--ink3);font-size:13px">${S.requests?'Отправлено вами: '+S.requests+' · без возвратов подряд: '+S.reqClean:'Первая заявка принесёт +50 баллов'}</span></div>
+  <div class="card tblwrap"><table><thead><tr><th>Номер</th><th>Название</th><th>Тип</th><th>Сумма</th><th>Статус</th><th></th></tr></thead><tbody>
+  ${S.reqs.map(r=>`<tr class="${r.isNew?'new':''}"><td>${r.id}</td><td><b style="font-weight:600">${esc(r.name)}</b></td><td>${r.type}</td><td>${r.sum}</td>
+   <td><span class="badge sm ${r.st==='Утверждена'?'b-pos':r.st==='Черновик'?'b-def':'b-acc'}" id="st-${r.id}">${r.st}</span></td>
+   <td style="text-align:right">${r.mine&&r.st!=='Утверждена'?`<button class="btn sm ghost" data-route="${r.id}">Пройти маршрут · демо</button>`:''}</td></tr>`).join('')}
+  </tbody></table></div>`;
+  S.reqs.forEach(r=>delete r.isNew);
+}
+function formPct(){const f=UI.form;return FIELDS.filter(([k])=>k==='file'?f.file:String(f[k]||'').trim()).length}
+function vForm(){
+  const f=UI.form,n=formPct(),pct=Math.round(n/FIELDS.length*100);
+  const first=!S.requests;
+  $('#view').innerHTML=`<div class="card form"><div><h2 style="font-size:18px;margin-bottom:16px">Новая заявка</h2><div class="fields">
+   <label class="f ${f.type?'done':''}"><span>Тип заявки</span><select data-f="type"><option value="">Выберите</option>${['Бюджетная','Закупка','Командировка'].map(o=>`<option ${f.type===o?'selected':''}>${o}</option>`).join('')}</select></label>
+   <label class="f ${f.cfo?'done':''}"><span>ЦФО</span><select data-f="cfo"><option value="">Выберите</option>${['Финансы','ИТ','Логистика','Маркетинг'].map(o=>`<option ${f.cfo===o?'selected':''}>${o}</option>`).join('')}</select></label>
+   <label class="f full ${f.name?'done':''}"><span>Название</span><input type="text" data-f="name" value="${esc(f.name||'')}" placeholder="Например, бюджет на обучение команды"></label>
+   <label class="f ${f.sum?'done':''}"><span>Сумма, ₽</span><input type="number" data-f="sum" value="${esc(f.sum||'')}" placeholder="0"></label>
+   <span></span>
+   <label class="f full ${f.why?'done':''}"><span>Обоснование</span><textarea rows="3" data-f="why" placeholder="Зачем нужна заявка и какой эффект ожидается">${esc(f.why||'')}</textarea></label>
+   <label class="check full"><input type="checkbox" data-f="file" ${f.file?'checked':''}> Расчёт экономического эффекта приложен</label>
+   </div><div style="display:flex;gap:8px;margin-top:20px"><button class="btn pri" id="submit" ${n>=5?'':'disabled'} style="min-width:170px">Отправить заявку</button><button class="btn sec" id="cancel">Отмена</button><button class="btn ghost" id="autofill">Заполнить пример</button></div></div>
+   <aside class="aside" aria-live="polite"><b>Заполнено ${n} из ${FIELDS.length}</b><div class="pbar ${n===FIELDS.length?'pos':''}"><i style="width:${pct}%"></i></div>
+   <img src="${IMG(n===FIELDS.length?'finni_done':'finni_empty')}" alt="" style="transform:scale(${n===FIELDS.length?1.05:.95})">
+   <p class="hint">${n===FIELDS.length?'Всё на месте — заявка с полным расчётом проходит маршрут быстрее.':n>=5?'Можно отправлять. Приложите расчёт, чтобы избежать возврата.':'Заполните обязательные поля — Финни подскажет, когда всё готово.'}</p>
+   <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge sm b-pos">+10 за заявку</span>${first?'<span class="badge sm b-acc">+50 за первую</span>':''}</div></aside></div>`;
+}
+function vSent(){
+  const r=UI.sent;
+  $('#view').innerHTML=`<div class="card sent"><img src="${IMG('finni_done')}" alt="Финни радуется" style="animation:hop 1400ms var(--e-spring)">
+   <h2 style="font-size:22px">Заявка ${r.id} отправлена</h2><p style="color:var(--ink2)">«${esc(r.name)}» ушла на согласование руководителю ЦФО. Статус можно отслеживать в реестре.</p>
+   <div class="route" style="justify-content:center"><span class="step done">✓ Создана</span><span class="arrow"></span><span class="step cur">Руководитель ЦФО</span><span class="arrow"></span><span class="step">Финансовый директор</span><span class="arrow"></span><span class="step">Утверждена</span></div>
+   <div style="display:flex;gap:8px;margin-top:6px"><button class="btn pri" id="toreg">В реестр заявок</button><button class="btn sec" id="newreq">Создать ещё</button></div></div>`;
+}
+function submitReq(btn){
+  btn.disabled=true;btn.style.opacity=1;btn.innerHTML='<span class="spin"></span>Отправляем';
+  setTimeout(()=>{
+    const f=UI.form;const r={id:'ЗК-'+(S.seq++),name:f.name,type:f.type,sum:fmt(+f.sum||0)+' ₽',st:'На согласовании',mine:true,isNew:true};
+    S.reqs.unshift(r);S.requests++;S.reqClean++;
+    award(10,'Заявка '+r.id);
+    UI.form=null;UI.sent=r;
+    const evs=checkAch().map(a=>({kind:'ach',a}));
+    if(!evs.length)evs.push({kind:'routine',title:'Заявка отправлена · +10 баллов',text:S.reqClean>=2?S.reqClean+' заявки подряд без возвратов':'Ждём решения руководителя ЦФО'});
+    if(evs.some(e=>e.kind==='ach'&&e.a.id==='first_req'))confetti(.7);
+    celebrate(evs);
+  },reduce?100:900);
+}
+function runRoute(id){
+  const r=S.reqs.find(x=>x.id===id);if(!r)return;
+  const steps=['Руководитель ЦФО','Финансовый директор','Утверждена'];let i=0;
+  const tick=()=>{const el=document.getElementById('st-'+id);r.st=steps[i];if(el){el.textContent=steps[i];el.className='badge sm '+(i===2?'b-pos':'b-acc')+' bump'}
+    i++;if(i<steps.length)setTimeout(tick,700);else{S.budgets++;const evs=checkAch().map(a=>({kind:'ach',a,big:a.id==='budget'}));
+      if(!evs.length)evs.push({kind:'routine',title:'Заявка '+id+' утверждена',text:'Полный маршрут пройден'});celebrate(evs)}};
+  tick();
+}
+
+/* ---- КАБИНЕТ ---- */
+function achState(a){if(S.unlocked.includes(a.id))return'got';const v=a.v(S);return v>0?'prog':'lock'}
+function achCard(a){
+  const st=achState(a),v=Math.min(a.v(S),a.goal);
+  const lab={got:['Получено','b-pos'],prog:['В процессе','b-acc'],lock:['Заблокировано','b-def']}[st];
+  return `<div class="card ach ${st==='got'?'':st} ${S.fresh.includes(a.id)?'fresh':''}"><img src="${IMG(a.img)}" alt="">
+   <div style="min-width:0;flex:1"><h4>${a.name}</h4><p>${a.ext&&st!=='got'?a.ext+' · ':''}${a.desc}</p>
+   ${st==='prog'?`<div class="pbar"><i style="width:${v/a.goal*100}%"></i></div>`:''}
+   <div class="foot"><span class="badge sm ${lab[1]}">${lab[0]}${st==='prog'?' · '+fmt(v)+' из '+fmt(a.goal):''}</span><span class="badge sm b-def">+${a.pts}</span></div></div></div>`;
+}
+function vCab(){
+  const li=lvlOf(S.points),L=LEVELS[li],N=LEVELS[li+1];
+  const pct=N?(S.points-L.min)/(N.min-L.min)*100:100;
+  const got=ACH.filter(a=>S.unlocked.includes(a.id)).length;
+  const lvl=`<div class="card levelcard"><img src="${IMG(L.img)}" alt="Финни — уровень ${L.name}" style="animation:bob 3.2s ease-in-out infinite">
+    <div style="min-width:0"><span class="badge sm b-acc">Уровень ${li+1} из ${LEVELS.length}</span><h2 style="margin-top:8px">${L.name}</h2>
+    <p class="sub">${N?'До уровня «'+N.name+'» осталось '+fmt(N.min-S.points)+' '+plural(N.min-S.points,'балл','балла','баллов'):'Максимальный уровень'}</p>
+    <div class="pbar" style="margin-top:12px;max-width:520px"><i style="width:${pct}%"></i></div>
+    <div class="lvlsteps">${LEVELS.map((l,k)=>`<span class="${k<=li?'on':''}">${l.name} · ${fmt(l.min)}+</span>`).join('')}</div></div>
+    <div class="stat"><b>${fmt(S.points)}</b><small>баллов</small><div style="margin-top:12px"><b style="font-size:20px">${got} из ${ACH.length}</b><small>достижений</small></div></div></div>`;
+  const toggle=`<div class="toolbar"><div class="seg" role="group" aria-label="Вариант кабинета"><button aria-pressed="${UI.cabVar==='A'}" data-cab="A">Вариант A · Каталог</button><button aria-pressed="${UI.cabVar==='B'}" data-cab="B">Вариант B · Мой уровень</button></div></div>`;
+  let body;
+  if(UI.cabVar==='A'){
+    body=`<div class="card" style="padding:16px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap"><img src="${IMG(L.img)}" alt="" style="width:56px;height:56px"><div style="flex:1;min-width:200px"><b>${L.name} · ${fmt(S.points)} баллов</b><div class="pbar" style="margin-top:8px"><i style="width:${pct}%"></i></div></div><span class="badge b-pos">${got} из ${ACH.length} получено</span></div>`+
+    SECS.map(sec=>{const items=ACH.filter(a=>a.sec===sec);const g=items.filter(a=>S.unlocked.includes(a.id)).length;
+      return `<div class="asec"><h3>${sec}<small>${g} из ${items.length}</small></h3><div class="grid">${items.map(achCard).join('')}</div></div>`}).join('');
+  } else {
+    const nexts=ACH.filter(a=>!S.unlocked.includes(a.id)&&!a.ext).sort((a,b)=>b.v(S)/b.goal-a.v(S)/a.goal).slice(0,3);
+    const recent=S.unlocked.slice().reverse().slice(0,4).map(id=>ACH.find(a=>a.id===id));
+    body=lvl+`<div class="two"><div><div class="asec" style="margin-top:0"><h3>Ближайшие цели</h3><div class="grid">${nexts.map(achCard).join('')}</div></div>
+      <div class="asec"><h3>Недавно получено</h3><div class="grid">${recent.map(achCard).join('')}</div></div></div>
+      <div class="card hist"><h3 style="font-size:16px;padding:10px 18px 6px">История баллов</h3>${S.hist.slice(0,10).map(h=>`<div><span>${esc(h.t)}<small>${h.d}</small></span><em>+${h.p}</em></div>`).join('')}</div></div>`;
+  }
+  $('#view').innerHTML=toggle+body;
+  setTimeout(()=>{S.fresh=[];save();const c=$('#achcnt');if(c)c.hidden=true},5000);
+}
+
+/* ============ ТОСТЫ, МОДАЛКА, КОНФЕТТИ ============ */
+function floatPts(p){const b=$('#ptsb')||$('#me');if(!b)return;const s=document.createElement('span');s.className='float';s.textContent='+'+p;b.appendChild(s);b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');setTimeout(()=>s.remove(),1200)}
+function logNotif(o){S.notifs.unshift({img:o.img,title:o.title,text:o.text,time:new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});S.notifs=S.notifs.slice(0,30);S.unread++;save();
+  const bc=$('#bellcnt');if(bc){bc.textContent=S.unread;bc.className='cnt okc bump'}}
+function toast(o){
+  logNotif(o);
+  const el=document.createElement('div');el.className='toast';el.setAttribute('role','status');
+  const act=o.act?(o.act[1]==='gam'?`<button class="act" data-gam data-popbtn>${o.act[0]}</button>`:`<button class="act" data-go="${o.act[1]}">${o.act[0]}</button>`):'';
+  el.innerHTML=`${o.img?`<img class="ill ${o.cat?'cat':''}" src="${o.img}" alt="">`:''}<b>${esc(o.title)}</b><span>${esc(o.text)}</span>${act}<button class="x" aria-label="Закрыть">✕</button><i class="bar"></i>`;
+  const box=$('#toasts');box.appendChild(el);const ts=box.querySelectorAll('.toast');if(ts.length>3)ts[0].remove();
+  let timer;const kill=()=>{el.classList.add('out');setTimeout(()=>el.remove(),260)};
+  const arm=()=>{clearTimeout(timer);timer=setTimeout(kill,6000)};
+  el.addEventListener('mouseenter',()=>clearTimeout(timer));el.addEventListener('mouseleave',()=>{const b=el.querySelector('.bar');if(b){b.style.animation='none';void b.offsetWidth;b.style.animation=''}arm()});
+  el.querySelector('.x').onclick=kill;el.querySelector('.act')&&el.querySelector('.act').addEventListener('click',()=>setTimeout(kill,100));arm();
+}
+function bellPop(anchor){S.notifs.forEach((n,i)=>n.unread=i<S.unread);const html=`<div class="npanel"><h5>Уведомления <span class="glvl">${S.notifs.length}</span></h5>${S.notifs.length?S.notifs.map(n=>`<div class="nitem ${n.unread?'unread':''}"><img src="${n.img}" alt=""><div style="min-width:0"><b>${esc(n.title)}</b><span>${esc(n.text)}</span><small>Сегодня, ${n.time}</small></div></div>`).join(''):'<p style="padding:8px;color:var(--ink3);font-size:13px">Здесь появятся уведомления о баллах и достижениях.</p>'}</div>`;
+  S.unread=0;save();const bc=$('#bellcnt');bc.textContent='99+';bc.className='cnt';
+  const r=anchor.getBoundingClientRect();closePop();const d=document.createElement('div');d.className='pop';d.id='pop';d.style.width='340px';d.style.padding='0';d.style.left=Math.min(r.right+10,innerWidth-356)+'px';d.style.bottom=Math.max(16,innerHeight-r.bottom)+'px';d.innerHTML=html;document.body.appendChild(d)}
+function showModal(e){
+  let img='finni_done',title,sub,pts,acts=[['Мои достижения','cab'],['Вернуться к задачам','tasks']];
+  if(e.kind==='ach'&&e.a.id==='first_appr'){title='Первая инициатива согласована!';pts='+50 баллов';sub='Инициатива передана Руководителю ДИТ. Достижение «Первое согласование» уже в кабинете.'}
+  else if(e.kind==='milestone'){title=e.n+' согласований!';pts='+100 баллов';sub='Круглая цифра — и ни одной просрочки. Достижение «Надёжный партнёр» уже в кабинете.'}
+  else if(e.kind==='level'){const L=LEVELS[e.lv];img=L.img;title='Новый уровень — '+L.name+'!';pts='Уровень '+(e.lv+1);sub='Вы набрали '+fmt(S.points)+' баллов. Новые достижения уже ждут в кабинете.';acts=[['Мои достижения','cab'],['Продолжить','']]}
+  else if(e.kind==='ach'&&e.a.id==='rep_exp'){img='lvl_expert';title='Эксперт отчётов!';pts='60 баллов';sub='Вы освоили все возможности отчёта. Фильтры, сортировка, свой вид, избранное, совместный доступ и справочник показателей — теперь вы работаете с отчётом как эксперт.';acts=[['Мои достижения','cab'],['Отлично','']]}
+  else if(e.kind==='ach'){img=e.a.img;title='Достижение «'+e.a.name+'»';pts='+'+e.a.pts+' баллов';sub=e.a.desc;acts=[['Мои достижения','cab'],['Продолжить','']]}
+  $('#modalroot').innerHTML=`<div class="ovl" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal">
+   <button class="mx" data-close aria-label="Закрыть">✕</button>
+   <div class="hero"><img src="${IMG(img)}" alt="Финни празднует"></div>
+   <div class="tt"><h2 id="mt">${esc(title)}</h2><span class="hbadge hb-def">${pts}</span></div><p>${esc(sub)}</p>
+   <div class="acts"><button class="btn chip" data-go="${acts[0][1]}" data-close>${acts[0][0]}</button><button class="btn pri pill" ${acts[1][1]?`data-go="${acts[1][1]}"`:''} data-close>${acts[1][0]}</button></div></div></div>`;
+  setTimeout(()=>{const b=document.querySelector('.modal .btn.pri');b&&b.focus()},50);
+}
+function closeModal(){const o=$('.ovl');if(!o)return;o.style.transition='opacity 200ms';o.style.opacity=0;setTimeout(()=>$('#modalroot').innerHTML='',200)}
+function confetti(k=1){
+  if(reduce)return;
+  const c=$('#cf'),x=c.getContext('2d');c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;x.scale(devicePixelRatio,devicePixelRatio);
+  const cols=['#58FF6E','#05C5C8','#00E2FF','#1999EE','#99AFFE','#ffd166'];
+  const P=Array.from({length:Math.round(160*k)},()=>({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.45,vx:(Math.random()-.5)*16,vy:-Math.random()*15-5,r:Math.random()*6+4,a:Math.random()*6,va:(Math.random()-.5)*.3,c:cols[Math.random()*cols.length|0],s:Math.random()<.5}));
+  const t0=performance.now();
+  (function f(t){const dt=t-t0;x.clearRect(0,0,innerWidth,innerHeight);
+    P.forEach(p=>{p.vy+=.38;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;x.save();x.globalAlpha=Math.max(0,1-dt/2200);x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;
+      if(p.s)x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);else{x.beginPath();x.arc(0,0,p.r/2.4,0,7);x.fill()}x.restore()});
+    if(dt<2200)requestAnimationFrame(f);else x.clearRect(0,0,innerWidth,innerHeight)})(t0);
+}
+
+/* ============ ДЕМО-ПАНЕЛЬ ============ */
+let demoOpen=innerWidth>760;
+function vDemo(){
+  $('#demoroot').innerHTML=demoOpen?`<div class="demo" role="region" aria-label="Демо-сценарии"><b>Демо</b>
+    <button data-demo="first">Первое согласование</button><button data-demo="ms">Веха 10</button><button data-demo="lvl">Почти «Практик»</button><button data-demo="done">Одна задача до конца</button><button data-demo="rep5">Отчёты 5 из 6</button><button data-demo="thr">Пауза тостов 30 с: ${UI.throttle?'вкл':'выкл'}</button><button data-demo="reset">Сброс</button><button class="x" data-demo="hide" aria-label="Скрыть">✕</button></div>`:
+    `<button class="demofab" data-demo="show">Демо</button>`;
+}
+function demo(k){
+  if(k==='hide'){demoOpen=false;return vDemo()} if(k==='show'){demoOpen=true;return vDemo()}
+  if(k==='thr'){UI.throttle=!UI.throttle;return vDemo()}
+  S=fresh();UI.seg='all';UI.form=null;UI.sent=null;UI.rep={};UI.view='tasks';
+  if(k==='ms'){S.approvals=9;S.apprToday=1;S.points=345;S.week=160;S.unlocked.push('first_appr');S.noReturn=9}
+  if(k==='lvl'){S.points=188}
+  if(k==='done'){S.tasks=S.tasks.slice(0,1);S.dayDone=4}
+  if(k==='rep5'){S.repGoals=['fav','filter','sort','save','gloss'];S.points+=80;S.unlocked.push('rep_conf');UI.view='rep';UI.rep={fav:true,sort:true,filter:null,view:'Прибыль 2026 по банкам'}}
+  $('#toasts').innerHTML='';closeModal();save();render();window.scrollTo(0,0);
+}
+
+/* ============ СОБЫТИЯ ============ */
+document.addEventListener('click',e=>{
+  const T=e.target;
+  const inPop=T.closest('#pop');
+  if(!inPop&&!T.closest('[data-popbtn]'))closePop();
+  if(T.closest('[data-close]'))closeModal();
+  if(T.classList.contains('ovl'))closeModal();
+  const g=T.closest('[data-go]');
+  if(g&&g.dataset.go){UI.view=g.dataset.go;UI.sent=null;if(UI.view!=='req')UI.form=null;render();window.scrollTo(0,0);return}
+  const d=T.closest('[data-demo]');if(d)return demo(d.dataset.demo);
+  if(T.closest('[data-gam]')){if(UI.view!=='rep'){UI.view='rep';render()}setTimeout(()=>{const g=$('#gambtn');g&&gamPop(g)},30);return}
+  const s=T.closest('[data-seg]');if(s){UI.seg=s.dataset.seg;UI.view='tasks';return render()}
+  const gr=T.closest('[data-grid]');if(gr){UI.grid=gr.dataset.grid==='1';return render()}
+  const op=T.closest('[data-open]');if(op){UI.ini=+op.dataset.open;UI.iniTab='Общее';UI.view='ini';render();window.scrollTo(0,0);return}
+  const tb=T.closest('[data-tab]');if(tb){UI.iniTab=tb.dataset.tab;return render()}
+  const c=T.closest('[data-cab]');if(c){UI.cabVar=c.dataset.cab;return render()}
+  const r=T.closest('[data-route]');if(r){r.remove();return runRoute(r.dataset.route)}
+  const rg=T.closest('[data-retgo]');if(rg){const k=rg.dataset.retgo;if(k==='cancel'){$('#retroot').innerHTML='';return}
+    const t=S.tasks.find(x=>x.id===UI.ini);if(t)closeTask(t,k);return}
+  // CSAT
+  const cs=T.closest('[data-cs]');if(cs){const n=+cs.dataset.cs;UI.csat=n;document.querySelectorAll('.csat [data-cs]').forEach((b,i)=>b.classList.toggle('on',i<n));$('.csat .send').disabled=false;return}
+  const cx=T.closest('[data-csat]');if(cx){const box=$('.csat');if(cx.dataset.csat==='send'){S.reviews++;award(5,'Отзыв о разделе «Задачи»');const evs=checkAch().map(a=>({kind:'ach',a}));
+      evs.push({kind:'routine',img:'finni_relax',title:'Спасибо за отзыв! +5 баллов',text:S.reviews<3?'Ещё '+(3-S.reviews)+' — и достижение «Голос пользователя»':'Ваш голос помогает делать FinAI удобнее'});UI.throttle&&(S.lastToast=0);box&&box.remove();celebrate(evs)}
+    else box&&box.remove();return}
+  // отчёты: всплывающие окна
+  const bk=T.closest('[data-bank]');if(bk){UI.rep.filter=bk.dataset.bank;closePop();render();repGoal('filter',$('#fltbtn'));return}
+  if(T.closest('[data-clearf]')){UI.rep.filter=null;return render()}
+  const btn=T.closest('button');const id=btn&&btn.id;
+  if(id==='savego'){const v=($('#viewname').value||'').trim()||'Мой вид';UI.rep.view=v;closePop();render();repGoal('save',$('#savebtn'));return}
+  if(id==='sharego'){const who=$('#sharewho').value;closePop();if(S.repGoals.includes('share'))toast({img:IMG('ach_team'),title:'Отчёт отправлен',text:who+' получит ссылку с вашими настройками'});repGoal('share',$('#sharebtn'));return}
+  if(id==='gambtn')return gamPop(btn);
+  if(id==='bell'){if($('#pop .npanel')){closePop();return}return bellPop(btn)}
+  if(id==='fltbtn')return pop(btn,`<h5>Подразделение</h5>${BANKS.map(b=>`<button class="popbtn" data-bank="${b}">${b}${UI.rep.filter===b?' ✓':''}</button>`).join('')}`,260);
+  if(id==='savebtn')return pop(btn,`<h5>Сохранить вид таблицы</h5><input type="text" id="viewname" value="${esc(UI.rep.view||'Прибыль 2026 по банкам')}"><p style="font-size:12px;color:var(--ink3);margin:8px 0">Сохранятся фильтры, сортировка и ширина колонок.</p><button class="btn pri sm" id="savego" style="width:100%">Сохранить</button>`,300);
+  if(id==='sharebtn')return pop(btn,`<h5>Поделиться отчётом</h5><select id="sharewho"><option>Иванова Е.Н.</option><option>Смирнов Д.А.</option><option>Орлова Е.П.</option></select><p style="font-size:12px;color:var(--ink3);margin:8px 0">Коллега откроет отчёт с вашими фильтрами и видом.</p><button class="btn pri sm" id="sharego" style="width:100%">Поделиться</button>`,300);
+  if(id==='glossbtn'){pop(btn,`<h5>Прибыль, руб.</h5><p style="font-size:13px;color:var(--ink2)">Операционная прибыль инициативы: эффекты минус прямые и аллоцированные затраты за календарный год. Источник — методика ФП-12, раздел 3.2.</p>`,320);repGoal('gloss',btn);return}
+  if(id==='sortbtn'){UI.rep.sort=!UI.rep.sort;render();if(UI.rep.sort)repGoal('sort',$('#sortbtn'));return}
+  if(id==='favbtn'){UI.rep.fav=!UI.rep.fav;render();if(UI.rep.fav)repGoal('fav',$('#favbtn'));return}
+  // задачи и инициатива
+  if(id==='approve')doApprove(btn);
+  if(id==='resend'){btn.disabled=true;btn.innerHTML='<span class="spin"></span>';const t=S.tasks.find(x=>x.id===UI.ini);setTimeout(()=>closeTask(t,'task'),reduce?50:700)}
+  if(id==='ret')retPanel('ret');
+  if(id==='reject')retPanel('rej');
+  // заявки
+  if(id==='newreq'){UI.sent=null;UI.form={};render()}
+  if(id==='cancel'){UI.form=null;render()}
+  if(id==='toreg'){UI.sent=null;render()}
+  if(id==='autofill'){UI.form={type:'Бюджетная',cfo:'Финансы',name:'Бюджет на обучение команды казначейства',sum:'340000',why:'Повышение квалификации, снижение ошибок в платёжном календаре',file:true};render()}
+  if(id==='submit')submitReq(btn);
+  if(id==='infobtn'||id==='useful'){const ex=$('.tip');if(ex){ex.remove();return}const b=btn.getBoundingClientRect();const tp=document.createElement('div');tp.className='tip';tp.textContent=VIEWS[UI.view].info;tp.style.left=Math.max(16,Math.min(b.left,innerWidth-336))+'px';tp.style.top=(b.bottom+8)+'px';document.body.appendChild(tp);setTimeout(()=>tp.remove(),6000)}
+});
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.f;if(!k||!UI.form)return;
+  UI.form[k]=e.target.type==='checkbox'?e.target.checked:e.target.value;
+  // перерисовываем только боковую панель и кнопку, чтобы не терять фокус
+  const pos=e.target.selectionStart,focusK=k;vForm();const el=document.querySelector(`[data-f="${focusK}"]`);if(el){el.focus();try{if(pos!=null&&el.setSelectionRange)el.setSelectionRange(pos,pos)}catch(_){}}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+render();
+</script>
+
+</body>
+</html>
